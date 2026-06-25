@@ -1,0 +1,20 @@
+/* ============================================================
+   House of UGC — Web Font Declarations
+   NOTE: Using Google Fonts CDN. Original font files were not
+   provided in source material. Request brand font files
+   (Inter and Space Grotesk TTF/WOFF2) from the brand team
+   for self-hosted production use.
+   ============================================================ */
+
+/* Google Fonts import — covers Inter + Space Grotesk + JetBrains Mono */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ⚠️ SUBSTITUTION NOTE:
+   The actual brand fonts were not provided. The following
+   Google Fonts substitutions are used:
+   - "Inter"          → Inter (Google Fonts) — near-identical match
+   - "Space Grotesk"  → Space Grotesk (Google Fonts) — premium geometric sans
+   - "JetBrains Mono" → JetBrains Mono (Google Fonts) — exact match
+   
+   Please provide WOFF2 files if specific licensed fonts are required.
+*/

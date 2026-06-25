@@ -1,0 +1,27 @@
+<!-- @dsCard group="Spacing" viewport="700x160" name="Motion Tokens" subtitle="Duration and easing values for all transitions" -->
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="../styles.css">
+<style>
+body { margin: 0; background: var(--color-bg); font-family: var(--font-body); padding: 24px; }
+.grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+.token { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 12px; }
+.demo { height: 6px; background: var(--color-fg); border-radius: 3px; margin-bottom: 10px; }
+.name { font-size: 11px; font-family: var(--font-mono); color: var(--color-fg-tertiary); }
+.val  { font-size: 12px; color: var(--color-fg-secondary); margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="grid">
+  <div class="token"><div class="demo" style="width:20%"></div><div class="name">--duration-fast</div><div class="val">100ms</div></div>
+  <div class="token"><div class="demo" style="width:40%"></div><div class="name">--duration-normal</div><div class="val">200ms</div></div>
+  <div class="token"><div class="demo" style="width:70%"></div><div class="name">--duration-slow</div><div class="val">350ms</div></div>
+  <div class="token"><div class="demo" style="width:100%"></div><div class="name">--duration-slower</div><div class="val">500ms</div></div>
+  <div class="token"><div class="demo"></div><div class="name">--ease-spring</div><div class="val">cubic-bezier(0.22,1,0.36,1)</div></div>
+  <div class="token"><div class="demo"></div><div class="name">--ease-out</div><div class="val">cubic-bezier(0,0,0.2,1)</div></div>
+  <div class="token"><div class="demo"></div><div class="name">--ease-in-out</div><div class="val">cubic-bezier(0.4,0,0.2,1)</div></div>
+  <div class="token"><div class="demo"></div><div class="name">--ease-bounce</div><div class="val">cubic-bezier(0.34,1.56,0.64,1)</div></div>
+</div>
+</body>
+</html>

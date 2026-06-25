@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Website Builder — House of UGC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f4ff;--bg2:#fff;--surface:#ede9ff;--surface2:#f9f8ff;
+  --fg:#0d0b1e;--fg2:#4b4875;--fg3:#8b88b8;--fg4:#b8b5d4;
+  --border:rgba(100,80,220,.1);--border2:rgba(100,80,220,.2);
+  --a1:#7c3aed;--a2:#db2777;
+  --grad:linear-gradient(135deg,#7c3aed,#db2777);
+  --grad-soft:linear-gradient(135deg,rgba(124,58,237,.08),rgba(219,39,119,.05));
+  --success:#059669;--danger:#dc2626;
+  --r:8px;--r-lg:16px;--r-xl:24px;--r-full:9999px;
+  --shadow:0 4px 24px rgba(124,58,237,.1);
+  --shadow-lg:0 12px 48px rgba(124,58,237,.18);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+html{-webkit-font-smoothing:antialiased;font-size:16px}
+body{background:var(--bg);color:var(--fg);font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column}
+:focus-visible{outline:2px solid var(--a1);outline-offset:2px;border-radius:4px}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:var(--r-full)}
+a{color:var(--a1);text-decoration:none}
+a:hover{text-decoration:underline}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* NAV */
+nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:56px;flex-shrink:0;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  position:relative;z-index:10;
+}
+nav::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--grad);opacity:.5}
+.nav-logo{font-family:'Space Grotesk',system-ui,sans-serif;font-weight:800;font-size:15px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-link{font-size:12px;font-weight:500;color:var(--fg3);text-decoration:none;padding:5px 10px;border:1px solid var(--border2);border-radius:var(--r);transition:all .15s}
+.nav-link:hover{color:var(--a1);border-color:var(--a1);text-decoration:none;background:rgba(124,58,237,.05)}
+.nav-agents{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--fg3);padding:4px 10px;background:var(--surface);border-radius:var(--r-full);border:1px solid var(--border2)}
+.agent-dot{width:6px;height:6px;border-radius:50%;background:var(--success);animation:pulse 2s infinite}
+
+/* LAYOUT */
+.app{flex:1;display:grid;grid-template-columns:420px 1fr;overflow:hidden}
+
+/* ───────────── LEFT: CONVERSATION PANEL ───────────── */
+.left-panel{display:flex;flex-direction:column;background:var(--bg2);border-right:1px solid var(--border);overflow:hidden}
+
+/* WELCOME SCREEN */
+.welcome{
+  flex:1;overflow-y:auto;padding:28px 24px 20px;
+  display:flex;flex-direction:column;gap:20px;
+}
+.welcome-header h2{font-family:'Space Grotesk',system-ui,sans-serif;font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
+.welcome-header p{font-size:13px;color:var(--fg2);line-height:1.6}
+.welcome-header .grad-text{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.type-card{
+  display:flex;flex-direction:column;gap:6px;
+  padding:14px;border:1.5px solid var(--border2);border-radius:var(--r-lg);
+  cursor:pointer;transition:all .15s;background:var(--bg2);text-align:left;
+}
+.type-card:hover{border-color:var(--a1);background:rgba(124,58,237,.04);transform:translateY(-1px);box-shadow:var(--shadow)}
+.type-card.selected{border-color:var(--a1);background:rgba(124,58,237,.06);box-shadow:0 0 0 3px rgba(124,58,237,.12)}
+.type-emoji{font-size:22px}
+.type-name{font-size:13px;font-weight:700;color:var(--fg)}
+.type-desc{font-size:11px;color:var(--fg3);line-height:1.4}
+
+.desc-section{display:flex;flex-direction:column;gap:10px}
+.desc-label{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--fg3)}
+.desc-textarea{
+  background:var(--surface2);border:1.5px solid var(--border2);border-radius:var(--r);
+  padding:12px;font-size:13px;color:var(--fg);font-family:'Inter',system-ui,sans-serif;
+  resize:none;outline:none;width:100%;line-height:1.6;min-height:80px;
+  transition:border-color .15s;
+}
+.desc-textarea:focus{border-color:var(--a1)}
+.desc-textarea::placeholder{color:var(--fg4)}
+
+.btn-start{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:13px;
+  background:var(--grad);color:#fff;font-size:14px;font-weight:700;
+  border:none;border-radius:var(--r);cursor:pointer;
+  font-family:'Inter',system-ui,sans-serif;
+  box-shadow:0 4px 16px rgba(124,58,237,.3);
+  transition:opacity .15s,transform .1s;
+}
+.btn-start:hover{opacity:.9}
+.btn-start:active{transform:scale(.98)}
+.btn-start:disabled{opacity:.4;cursor:not-allowed}
+
+/* CHAT SCREEN */
+.chat-screen{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;display:none}
+.chat-screen.show{display:flex}
+
+.msg{display:flex;gap:10px;animation:fadeIn .3s ease both}
+.msg-ai{align-items:flex-start}
+.msg-user{align-items:flex-start;flex-direction:row-reverse}
+
+.msg-avatar{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+.msg-ai .msg-avatar{background:var(--grad)}
+.msg-user .msg-avatar{background:var(--surface);border:1.5px solid var(--border2);font-size:12px;color:var(--fg2);font-weight:700}
+
+.msg-bubble{
+  max-width:280px;padding:11px 14px;border-radius:var(--r-lg);
+  font-size:13px;line-height:1.6;
+}
+.msg-ai .msg-bubble{background:var(--surface);border:1px solid var(--border2);border-top-left-radius:4px;color:var(--fg)}
+.msg-user .msg-bubble{background:var(--grad);color:#fff;border-top-right-radius:4px}
+
+.msg-typing .msg-bubble{padding:14px 18px}
+.typing-dots{display:flex;gap:4px;align-items:center}
+.typing-dots span{width:6px;height:6px;border-radius:50%;background:var(--fg3);animation:pulse 1.2s infinite}
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+
+/* PREVIEW THUMBNAIL IN CHAT */
+.msg-preview{
+  max-width:300px;border-radius:var(--r);overflow:hidden;
+  border:1.5px solid var(--border2);cursor:pointer;
+  transition:box-shadow .15s;
+}
+.msg-preview:hover{box-shadow:var(--shadow)}
+.preview-thumb{width:100%;height:140px;border:none;pointer-events:none;transform-origin:top left}
+.preview-label{font-size:11px;color:var(--fg3);padding:6px 10px;background:var(--surface);border-top:1px solid var(--border)}
+
+/* SUGGESTIONS */
+.suggestions{display:flex;flex-wrap:wrap;gap:7px;padding:0 20px 12px;animation:fadeIn .3s ease}
+.chip{
+  font-size:12px;font-weight:500;padding:7px 13px;
+  border:1.5px solid var(--border2);border-radius:var(--r-full);
+  background:var(--bg2);color:var(--fg2);cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}
+.chip:hover{border-color:var(--a1);color:var(--a1);background:rgba(124,58,237,.05)}
+.chip.deploy{background:var(--grad);color:#fff;border-color:transparent}
+.chip.deploy:hover{opacity:.88}
+
+/* INPUT BAR */
+.input-bar{
+  padding:12px 16px;border-top:1px solid var(--border);
+  display:flex;gap:8px;align-items:flex-end;flex-shrink:0;
+  background:var(--bg2);display:none;
+}
+.input-bar.show{display:flex}
+.input-field{
+  flex:1;background:var(--surface2);border:1.5px solid var(--border2);
+  border-radius:var(--r);padding:10px 12px;font-size:13px;
+  color:var(--fg);font-family:'Inter',system-ui,sans-serif;
+  outline:none;resize:none;line-height:1.5;max-height:100px;
+  overflow-y:auto;transition:border-color .15s;
+}
+.input-field:focus{border-color:var(--a1)}
+.input-field::placeholder{color:var(--fg4)}
+.btn-send{
+  width:38px;height:38px;border-radius:var(--r);
+  background:var(--grad);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:opacity .15s;
+}
+.btn-send:hover{opacity:.88}
+.btn-send:disabled{opacity:.35;cursor:not-allowed}
+.btn-send svg{color:#fff}
+
+/* ───────────── RIGHT: PREVIEW PANEL ───────────── */
+.right-panel{display:flex;flex-direction:column;background:#f0eeff;overflow:hidden}
+
+.preview-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;height:48px;flex-shrink:0;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+}
+.preview-tabs{display:flex;gap:2px}
+.preview-tab{
+  font-size:12px;font-weight:500;color:var(--fg4);
+  padding:5px 12px;border-radius:var(--r);border:none;
+  background:none;cursor:pointer;font-family:'Inter',system-ui,sans-serif;
+  transition:all .15s;
+}
+.preview-tab.active{background:var(--surface);color:var(--fg2)}
+.bar-right{display:flex;align-items:center;gap:8px}
+.preview-meta{font-size:11px;color:var(--fg4);font-family:'JetBrains Mono',monospace}
+.btn-dl{
+  display:none;align-items:center;gap:6px;
+  background:var(--surface);border:1.5px solid var(--border2);
+  border-radius:var(--r);padding:6px 12px;cursor:pointer;
+  font-size:12px;font-weight:600;color:var(--a1);
+  font-family:'Inter',system-ui,sans-serif;transition:all .15s;
+}
+.btn-dl:hover{background:rgba(124,58,237,.08);border-color:var(--a1)}
+.btn-dl.show{display:flex}
+
+.preview-body{flex:1;position:relative;overflow:hidden}
+
+/* EMPTY STATE */
+.empty-state{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;text-align:center;padding:48px;
+}
+.empty-icon{
+  width:72px;height:72px;border-radius:var(--r-xl);
+  background:var(--grad-soft);border:1.5px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;font-size:28px;
+}
+.empty-state h3{font-family:'Space Grotesk',system-ui,sans-serif;font-size:18px;font-weight:700}
+.empty-state p{font-size:13px;color:var(--fg3);max-width:300px;line-height:1.65}
+
+/* LOADING STATE */
+.loading-state{
+  position:absolute;inset:0;display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+  gap:20px;background:rgba(245,244,255,.9);backdrop-filter:blur(4px);z-index:5;
+}
+.loading-state.show{display:flex}
+.loader-ring{
+  width:40px;height:40px;border:3px solid var(--border2);
+  border-top-color:var(--a1);border-radius:50%;animation:spin .8s linear infinite;
+}
+.loader-steps{display:flex;flex-direction:column;gap:8px;align-items:center;margin-top:4px}
+.loader-step{
+  font-size:12px;color:var(--fg3);display:flex;align-items:center;gap:8px;
+  opacity:0;animation:fadeIn .4s ease forwards;
+}
+.loader-step-dot{width:5px;height:5px;border-radius:50%;background:var(--a1)}
+
+#previewFrame{width:100%;height:100%;border:none;display:none;background:#fff}
+#previewFrame.show{display:block}
+#codePane{width:100%;height:100%;display:none;overflow:auto;padding:24px;background:#0d0b1e}
+#codePane.show{display:block}
+#codePane pre{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.7;color:#a5b4fc;white-space:pre-wrap;word-break:break-all}
+
+/* ───────────── DEPLOY MODAL ───────────── */
+.deploy-overlay{
+  position:fixed;inset:0;background:rgba(13,11,30,.6);backdrop-filter:blur(6px);
+  z-index:100;display:none;align-items:center;justify-content:center;padding:24px;
+}
+.deploy-overlay.show{display:flex}
+.deploy-modal{
+  background:var(--bg2);border-radius:var(--r-xl);width:100%;max-width:620px;
+  max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);
+  border:1px solid var(--border2);animation:fadeIn .3s ease;
+}
+.deploy-header{
+  padding:28px 32px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+}
+.deploy-header h2{font-family:'Space Grotesk',system-ui,sans-serif;font-size:20px;font-weight:800;letter-spacing:-.02em}
+.deploy-header p{font-size:13px;color:var(--fg2);margin-top:4px;line-height:1.5}
+.btn-close{
+  width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border2);
+  background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--fg3);flex-shrink:0;font-size:18px;transition:all .15s;
+}
+.btn-close:hover{border-color:var(--danger);color:var(--danger)}
+
+.deploy-body{padding:24px 32px 32px;display:flex;flex-direction:column;gap:20px}
+
+.deploy-step{
+  background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r-lg);
+  overflow:hidden;
+}
+.deploy-step-header{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 20px;cursor:pointer;transition:background .15s;
+}
+.deploy-step-header:hover{background:rgba(124,58,237,.04)}
+.step-badge{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--grad);color:#fff;font-size:12px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.step-title{font-size:14px;font-weight:700;flex:1}
+.step-tag{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:var(--r-full);background:var(--surface);color:var(--fg3);border:1px solid var(--border2)}
+.step-tag.recommended{background:rgba(5,150,105,.1);color:var(--success);border-color:rgba(5,150,105,.2)}
+.step-tag.database{background:rgba(124,58,237,.1);color:var(--a1);border-color:rgba(124,58,237,.2)}
+
+.deploy-step-body{padding:0 20px 20px;display:flex;flex-direction:column;gap:10px}
+.deploy-instruction{font-size:13px;color:var(--fg2);line-height:1.7}
+.deploy-instruction ol{padding-left:20px}
+.deploy-instruction li{margin-bottom:4px}
+.code-block{
+  background:#0d0b1e;border-radius:var(--r);padding:12px 16px;
+  font-family:'JetBrains Mono',monospace;font-size:12px;color:#a5b4fc;
+  line-height:1.7;position:relative;overflow:auto;
+}
+.btn-copy-code{
+  position:absolute;top:8px;right:8px;
+  font-size:10px;font-weight:600;color:var(--fg3);
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+  border-radius:4px;padding:3px 8px;cursor:pointer;transition:all .15s;
+}
+.btn-copy-code:hover{color:#fff;background:rgba(255,255,255,.12)}
+
+.db-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.db-card{padding:14px;background:var(--surface);border:1.5px solid var(--border2);border-radius:var(--r);cursor:pointer;transition:all .15s;text-align:center}
+.db-card:hover{border-color:var(--a1);background:rgba(124,58,237,.05)}
+.db-card .db-name{font-size:13px;font-weight:700;margin-bottom:3px}
+.db-card .db-desc{font-size:11px;color:var(--fg3)}
+.db-card .db-tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:var(--r-full);background:rgba(5,150,105,.1);color:var(--success);margin-bottom:6px}
+
+.deploy-cta{
+  display:flex;align-items:center;gap:10px;padding:16px 20px;
+  background:var(--grad-soft);border-radius:var(--r);border:1px solid var(--border2);
+}
+.deploy-cta p{font-size:13px;color:var(--fg2);line-height:1.5;flex:1}
+.btn-download-zip{
+  display:flex;align-items:center;gap:7px;
+  background:var(--grad);color:#fff;border:none;
+  border-radius:var(--r);padding:10px 18px;cursor:pointer;
+  font-size:13px;font-weight:700;font-family:'Inter',system-ui,sans-serif;
+  white-space:nowrap;transition:opacity .15s;box-shadow:0 3px 12px rgba(124,58,237,.3);
+}
+.btn-download-zip:hover{opacity:.88}
+.btn-download-zip:disabled{opacity:.4;cursor:not-allowed}
+
+@media(max-width:900px){
+  .app{grid-template-columns:1fr}
+  .right-panel{height:460px}
+  body{overflow:auto}
+  html,body{height:auto}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span class="nav-logo">House of UGC</span>
+    <span style="width:1px;height:16px;background:var(--border2);display:inline-block"></span>
+    <span style="font-size:13px;color:var(--fg3);font-weight:500">Website Builder</span>
+  </div>
+  <div class="nav-right">
+    <div class="nav-agents">
+      <span class="agent-dot"></span>
+      Gemini designs · Claude codes
+    </div>
+    <a href="/generator.html" class="nav-link">⚡ Quick Generator</a>
+    <a href="/image-agent.html" class="nav-link">🎨 Image Agent</a>
+  </div>
+</nav>
+
+<div class="app">
+
+  <!-- LEFT PANEL -->
+  <aside class="left-panel">
+
+    <!-- WELCOME SCREEN -->
+    <div class="welcome" id="welcomeScreen">
+      <div class="welcome-header">
+        <h2>Build your <span class="grad-text">dream website</span> today</h2>
+        <p>Tell me what you want — I'll design it with Gemini, build it with Claude, and you can keep refining until it's perfect.</p>
+      </div>
+
+      <div>
+        <div class="desc-label" style="margin-bottom:10px">What kind of website?</div>
+        <div class="type-grid">
+          <button class="type-card" onclick="selectType('restaurant')">
+            <span class="type-emoji">🍕</span>
+            <span class="type-name">Restaurant</span>
+            <span class="type-desc">Menu, reservations, hours</span>
+          </button>
+          <button class="type-card" onclick="selectType('portfolio')">
+            <span class="type-emoji">💼</span>
+            <span class="type-name">Portfolio</span>
+            <span class="type-desc">Projects, skills, contact</span>
+          </button>
+          <button class="type-card" onclick="selectType('store')">
+            <span class="type-emoji">🛒</span>
+            <span class="type-name">Online Store</span>
+            <span class="type-desc">Products, cart, orders</span>
+          </button>
+          <button class="type-card" onclick="selectType('booking')">
+            <span class="type-emoji">📅</span>
+            <span class="type-name">Booking / Appointment</span>
+            <span class="type-desc">Schedule, availability</span>
+          </button>
+          <button class="type-card" onclick="selectType('blog')">
+            <span class="type-emoji">📝</span>
+            <span class="type-name">Blog / Newsletter</span>
+            <span class="type-desc">Articles, subscribe</span>
+          </button>
+          <button class="type-card" onclick="selectType('business')">
+            <span class="type-emoji">🏢</span>
+            <span class="type-name">Business / Agency</span>
+            <span class="type-desc">Services, team, contact</span>
+          </button>
+          <button class="type-card" onclick="selectType('event')">
+            <span class="type-emoji">🎉</span>
+            <span class="type-name">Event / Conference</span>
+            <span class="type-desc">RSVP, schedule, speakers</span>
+          </button>
+          <button class="type-card" onclick="selectType('saas')">
+            <span class="type-emoji">⚡</span>
+            <span class="type-name">SaaS / Startup</span>
+            <span class="type-desc">Features, pricing, CTA</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="desc-section" id="descSection" style="display:none">
+        <div class="desc-label" id="descLabel">Tell me about it</div>
+        <textarea class="desc-textarea" id="descInput" rows="4"
+          placeholder="e.g. Mario's Italian Kitchen — authentic Neapolitan pizza in downtown Austin. Family-owned since 1998. Cozy atmosphere, wood-fired oven."
+          onkeydown="if(event.key==='Enter'&&(event.metaKey||event.ctrlKey))startBuilding()"></textarea>
+        <button class="btn-start" id="startBtn" onclick="startBuilding()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Build My Website
+        </button>
+      </div>
+    </div>
+
+    <!-- CHAT SCREEN -->
+    <div class="chat-screen" id="chatScreen"></div>
+    <div class="suggestions" id="suggestions" style="display:none"></div>
+    <div class="input-bar" id="inputBar">
+      <textarea class="input-field" id="msgInput" rows="1" placeholder="Describe what to change…"
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="btn-send" id="sendBtn" onclick="sendMessage()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="preview-bar">
+      <div class="preview-tabs">
+        <button class="preview-tab active" onclick="setTab('preview')">Preview</button>
+        <button class="preview-tab" onclick="setTab('code')">Code</button>
+      </div>
+      <div class="bar-right">
+        <span class="preview-meta" id="previewMeta"></span>
+        <button class="btn-dl" id="dlHtmlBtn" onclick="downloadHtml()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download HTML
+        </button>
+      </div>
+    </div>
+
+    <div class="preview-body">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">🏗️</div>
+        <h3>Your website preview</h3>
+        <p>Choose a website type on the left and describe your business. Claude + Gemini will build it live here.</p>
+      </div>
+
+      <div class="loading-state" id="loadingState">
+        <div class="loader-ring"></div>
+        <div class="loader-steps" id="loaderSteps"></div>
+      </div>
+
+      <iframe id="previewFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" title="Preview"></iframe>
+      <div id="codePane"><pre id="codePre"></pre></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- DEPLOY MODAL -->
+<div class="deploy-overlay" id="deployOverlay" onclick="closeDeployIfBg(event)">
+  <div class="deploy-modal">
+    <div class="deploy-header">
+      <div>
+        <h2>🚀 Your website is ready to deploy!</h2>
+        <p>Here's exactly how to get it live — pick the option that fits you best.</p>
+      </div>
+      <button class="btn-close" onclick="closeDeployModal()">✕</button>
+    </div>
+    <div class="deploy-body">
+
+      <!-- Download first -->
+      <div class="deploy-cta">
+        <p><strong>Step 1:</strong> Download your full project — frontend, backend, sample data, and README all included.</p>
+        <button class="btn-download-zip" id="downloadZipBtn" onclick="downloadProject()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Project (ZIP)
+        </button>
+      </div>
+
+      <!-- Option A: Render -->
+      <div class="deploy-step">
+        <div class="deploy-step-header">
+          <div class="step-badge">A</div>
+          <span class="step-title">Deploy on Render.com</span>
+          <span class="step-tag recommended">Recommended · Free</span>
+        </div>
+        <div class="deploy-step-body">
+          <div class="deploy-instruction">
+            <ol>
+              <li>Unzip the downloaded file and push it to a <a href="https://github.com/new" target="_blank">new GitHub repo</a></li>
+              <li>Go to <a href="https://render.com" target="_blank">render.com</a> → Sign up free → <strong>New Web Service</strong></li>
+              <li>Connect your GitHub repo</li>
+              <li>Set: Build command = <code>npm install</code> · Start command = <code>node server.js</code></li>
+              <li>Click <strong>Deploy</strong> — your site is live in ~3 minutes ✅</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option B: Railway -->
+      <div class="deploy-step">
+        <div class="deploy-step-header">
+          <div class="step-badge">B</div>
+          <span class="step-title">Deploy on Railway.app</span>
+          <span class="step-tag database">With Real Database</span>
+        </div>
+        <div class="deploy-step-body">
+          <div class="deploy-instruction">
+            <ol>
+              <li>Unzip and push to GitHub</li>
+              <li>Go to <a href="https://railway.app" target="_blank">railway.app</a> → New Project → Deploy from GitHub</li>
+              <li>Your app deploys automatically. Add a database plugin below.</li>
+            </ol>
+          </div>
+          <div class="db-options">
+            <div class="db-card" onclick="copyToClip('npm install mongoose')">
+              <div class="db-tag">Free tier</div>
+              <div class="db-name">🍃 MongoDB Atlas</div>
+              <div class="db-desc">Click to copy install command</div>
+            </div>
+            <div class="db-card" onclick="copyToClip('npm install pg')">
+              <div class="db-tag">Free tier</div>
+              <div class="db-name">🐘 PostgreSQL</div>
+              <div class="db-desc">Click to copy install command</div>
+            </div>
+          </div>
+          <div class="deploy-instruction" style="margin-top:8px">
+            💡 In <code>server.js</code>, each route that reads/writes <code>data/*.json</code> has a clear comment — replace those with your database queries.
+          </div>
+        </div>
+      </div>
+
+      <!-- Option C: Local -->
+      <div class="deploy-step">
+        <div class="deploy-step-header">
+          <div class="step-badge">C</div>
+          <span class="step-title">Run Locally First</span>
+          <span class="step-tag">For testing</span>
+        </div>
+        <div class="deploy-step-body">
+          <div class="code-block" style="position:relative">
+            <span>cd your-project-folder</span><br>
+            <span>npm install</span><br>
+            <span>cp .env.example .env</span><br>
+            <span>npm start</span><br>
+            <span style="color:#4ade80"># Open http://localhost:3000</span>
+            <button class="btn-copy-code" onclick="copyToClip('cd your-project-folder\nnpm install\ncp .env.example .env\nnpm start')">Copy</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {
+  phase: 'welcome',       // welcome | building | chat
+  websiteType: '',
+  description: '',
+  improvements: [],
+  currentHtml: '',
+  iteration: 0,
+};
+
+const LOADING_STEPS = [
+  'Gemini is analysing your brief…',
+  'Gemini is choosing colors & typography…',
+  'Claude is designing the layout…',
+  'Claude is writing HTML & CSS…',
+  'Adding interactive features & forms…',
+  'Injecting hero illustration…',
+  'Almost ready…',
+];
+
+const TYPE_PROMPTS = {
+  restaurant: 'Tell me about your restaurant — name, cuisine, location, atmosphere, and anything special about it.',
+  portfolio:  'Tell me about yourself — your name, what you do (designer, developer, photographer…), and what kind of work you want to showcase.',
+  store:      'Tell me about your store — what you sell, your brand name, target customers, and what makes your products special.',
+  booking:    'Tell me about your service — what you offer, your name/brand, location, and who your typical client is.',
+  blog:       'Tell me about your blog — the topic/niche, your name, and what readers will get from it.',
+  business:   'Tell me about your business — company name, what you do, who you serve, and what makes you different.',
+  event:      'Tell me about your event — name, date, location, type of event, and who should attend.',
+  saas:       'Tell me about your product — name, what problem it solves, who it\'s for, and the key features.',
+};
+
+// ── Welcome flow ───────────────────────────────────────────────────────────
+function selectType(type) {
+  state.websiteType = type;
+  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  const section = document.getElementById('descSection');
+  const label   = document.getElementById('descLabel');
+  const input   = document.getElementById('descInput');
+  section.style.display = 'flex';
+  label.textContent = TYPE_PROMPTS[type] || 'Tell me about it';
+  input.placeholder  = getPlaceholder(type);
+  input.focus();
+  section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function getPlaceholder(type) {
+  const map = {
+    restaurant: "e.g. Mario's Italian Kitchen — authentic Neapolitan pizza in Austin TX. Family-owned since 1998, wood-fired oven, cozy atmosphere.",
+    portfolio:  "e.g. I'm Alex Chen, a UI/UX designer with 5 years of experience. I specialize in mobile apps and SaaS products.",
+    store:      "e.g. Bloom & Co — handmade skincare products using natural ingredients. Clean beauty for sensitive skin, ships worldwide.",
+    booking:    "e.g. Serene Mind Therapy — individual and couples counseling. Licensed therapist, downtown Chicago, sliding scale fees.",
+    blog:       "e.g. The Mindful Cook — weekly recipes and nutrition tips for busy professionals who want to eat well.",
+    business:   "e.g. PixelCraft Agency — branding and web design for startups. We've helped 80+ companies go from idea to launch.",
+    event:      "e.g. TechSummit 2025 — 2-day conference for developers and designers. April 15-16, San Francisco. 3 tracks, 40+ speakers.",
+    saas:       "e.g. TaskFlow — project management for remote teams. Replace messy spreadsheets with a visual, AI-powered workspace.",
+  };
+  return map[type] || 'Describe your website in detail…';
+}
+
+async function startBuilding() {
+  const desc = document.getElementById('descInput').value.trim();
+  if (!desc) { document.getElementById('descInput').focus(); return; }
+  state.description = desc;
+  state.iteration   = 0;
+  state.improvements = [];
+  switchToChat();
+  addUserMessage(desc);
+  await generateWebsite();
+}
+
+// ── Chat flow ──────────────────────────────────────────────────────────────
+function switchToChat() {
+  document.getElementById('welcomeScreen').style.display = 'none';
+  document.getElementById('chatScreen').classList.add('show');
+  document.getElementById('inputBar').classList.add('show');
+  state.phase = 'chat';
+}
+
+function addUserMessage(text) {
+  const screen = document.getElementById('chatScreen');
+  const div = document.createElement('div');
+  div.className = 'msg msg-user';
+  div.innerHTML = `
+    <div class="msg-avatar">You</div>
+    <div class="msg-bubble">${escHtml(text)}</div>`;
+  screen.appendChild(div);
+  screen.scrollTop = screen.scrollHeight;
+}
+
+function addAiMessage(text) {
+  const screen = document.getElementById('chatScreen');
+  const div = document.createElement('div');
+  div.className = 'msg msg-ai';
+  div.innerHTML = `
+    <div class="msg-avatar">✦</div>
+    <div class="msg-bubble">${escHtml(text)}</div>`;
+  screen.appendChild(div);
+  screen.scrollTop = screen.scrollHeight;
+  return div;
+}
+
+function addTypingIndicator() {
+  const screen = document.getElementById('chatScreen');
+  const div = document.createElement('div');
+  div.className = 'msg msg-ai msg-typing';
+  div.id = 'typingIndicator';
+  div.innerHTML = `
+    <div class="msg-avatar">✦</div>
+    <div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  screen.appendChild(div);
+  screen.scrollTop = screen.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+function addPreviewThumbnail(html) {
+  const screen = document.getElementById('chatScreen');
+  const div = document.createElement('div');
+  div.className = 'msg msg-ai';
+  const blob = new Blob([html], { type: 'text/html' });
+  const url  = URL.createObjectURL(blob);
+  div.innerHTML = `
+    <div class="msg-avatar">✦</div>
+    <div class="msg-preview" onclick="focusPreview()">
+      <iframe class="preview-thumb" src="${url}" scrolling="no" sandbox="allow-scripts allow-same-origin"></iframe>
+      <div class="preview-label">Click to see full preview →</div>
+    </div>`;
+  screen.appendChild(div);
+  screen.scrollTop = screen.scrollHeight;
+}
+
+function showSuggestions(chips) {
+  const el = document.getElementById('suggestions');
+  el.style.display = 'flex';
+  el.innerHTML = '';
+  chips.forEach(text => {
+    const btn = document.createElement('button');
+    btn.className = 'chip' + (text.includes('deploy') || text.includes('Deploy') ? ' deploy' : '');
+    btn.textContent = text;
+    btn.onclick = () => handleChip(text);
+    el.appendChild(btn);
+  });
+}
+
+function handleChip(text) {
+  if (text.toLowerCase().includes('deploy')) {
+    showDeployModal();
+  } else {
+    document.getElementById('msgInput').value = text;
+    sendMessage();
+  }
+}
+
+async function sendMessage() {
+  const input = document.getElementById('msgInput');
+  const text  = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  autoResize(input);
+  addUserMessage(text);
+  state.improvements.push(text);
+  document.getElementById('suggestions').style.display = 'none';
+  await generateWebsite();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+// ── Generation ─────────────────────────────────────────────────────────────
+async function generateWebsite() {
+  setLoading(true);
+  addTypingIndicator();
+  document.getElementById('sendBtn').disabled = true;
+  document.getElementById('suggestions').style.display = 'none';
+
+  try {
+    const res = await fetch('/build', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        description:  state.description,
+        websiteType:  state.websiteType,
+        improvements: state.improvements,
+        iteration:    state.iteration,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Generation failed');
+
+    state.currentHtml = data.html;
+    state.iteration++;
+
+    // Show in preview
+    renderPreview(data.html);
+
+    // Chat messages
+    removeTypingIndicator();
+    addPreviewThumbnail(data.html);
+    addAiMessage(data.message);
+    showSuggestions(data.suggestions);
+
+  } catch (err) {
+    removeTypingIndicator();
+    addAiMessage('Sorry, something went wrong: ' + err.message + '. Please try again.');
+  } finally {
+    setLoading(false);
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('chatScreen').scrollTop = 9999;
+  }
+}
+
+// ── Preview ────────────────────────────────────────────────────────────────
+let activeTab = 'preview';
+
+function renderPreview(html) {
+  document.getElementById('previewFrame').srcdoc = html;
+  document.getElementById('codePre').textContent = html;
+  document.getElementById('previewMeta').textContent = `${Math.round(html.length / 1024)}kb`;
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('dlHtmlBtn').classList.add('show');
+  setTab(activeTab, true);
+}
+
+function setTab(tab, force) {
+  if (!force && !state.currentHtml) return;
+  activeTab = tab;
+  document.querySelectorAll('.preview-tab').forEach((b, i) => b.classList.toggle('active', i === (tab === 'preview' ? 0 : 1)));
+  document.getElementById('previewFrame').classList.toggle('show', tab === 'preview' && !!state.currentHtml);
+  document.getElementById('codePane').classList.toggle('show', tab === 'code' && !!state.currentHtml);
+}
+
+function focusPreview() {
+  setTab('preview', true);
+  document.getElementById('previewFrame').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── Loading ────────────────────────────────────────────────────────────────
+function setLoading(on) {
+  document.getElementById('loadingState').classList.toggle('show', on);
+  if (on) {
+    const el = document.getElementById('loaderSteps');
+    el.innerHTML = '';
+    LOADING_STEPS.forEach((text, i) => {
+      const d = document.createElement('div');
+      d.className = 'loader-step';
+      d.style.animationDelay = `${i * 1.1}s`;
+      d.innerHTML = `<span class="loader-step-dot"></span>${text}`;
+      el.appendChild(d);
+    });
+  }
+}
+
+// ── Deploy Modal ───────────────────────────────────────────────────────────
+function showDeployModal() {
+  document.getElementById('deployOverlay').classList.add('show');
+}
+function closeDeployModal() {
+  document.getElementById('deployOverlay').classList.remove('show');
+}
+function closeDeployIfBg(e) {
+  if (e.target === document.getElementById('deployOverlay')) closeDeployModal();
+}
+
+async function downloadProject() {
+  const btn = document.getElementById('downloadZipBtn');
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+
+  try {
+    const res = await fetch('/build-project', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        description:  state.description,
+        websiteType:  state.websiteType,
+        improvements: state.improvements,
+        currentHtml:  state.currentHtml,
+      }),
+    });
+    if (!res.ok) {
+      const d = await res.json();
+      throw new Error(d.error || 'ZIP failed');
+    }
+    const blob = await res.blob();
+    const slug = state.description.split(' ').slice(0,3).join('-').replace(/[^a-z0-9-]/gi,'').toLowerCase() || 'my-website';
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement('a'), { href: url, download: slug + '.zip' });
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  } catch (err) {
+    alert('Download failed: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Project (ZIP)`;
+  }
+}
+
+function downloadHtml() {
+  if (!state.currentHtml) return;
+  const slug = state.description.split(' ').slice(0,3).join('-').replace(/[^a-z0-9-]/gi,'').toLowerCase() || 'website';
+  const blob = new Blob([state.currentHtml], { type: 'text/html' });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), { href: url, download: slug + '.html' });
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function copyToClip(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const el = event.currentTarget;
+    const orig = el.textContent;
+    el.textContent = 'Copied!';
+    setTimeout(() => { el.textContent = orig; }, 1500);
+  });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+
+</body>
+</html>

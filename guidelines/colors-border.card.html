@@ -1,0 +1,45 @@
+<!-- @dsCard group="Colors" viewport="700x160" name="Borders & Accents" subtitle="Border and interactive accent tones" -->
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="../styles.css">
+<style>
+body { margin: 0; background: var(--color-bg); font-family: var(--font-body); padding: 20px; }
+.row { display: flex; gap: 12px; }
+.swatch { flex: 1; border-radius: var(--radius-md); background: var(--color-surface); padding: 14px 12px; display: flex; flex-direction: column; justify-content: space-between; min-height: 100px; }
+.preview { height: 36px; border-radius: var(--radius-sm); margin-bottom: 10px; }
+.swatch-label { font-size: 10px; color: var(--color-fg-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+.swatch-name  { font-size: 12px; font-weight: 500; color: var(--color-fg-secondary); }
+.swatch-hex   { font-size: 10px; font-family: var(--font-mono); margin-top: 6px; color: var(--color-fg-tertiary); }
+</style>
+</head>
+<body>
+<div class="row">
+  <div class="swatch">
+    <div class="preview" style="border:2px solid rgba(255,255,255,0.08); background:transparent;"></div>
+    <div><div class="swatch-label">--color-border</div><div class="swatch-name">Default</div></div>
+    <div class="swatch-hex">rgba(255,255,255,0.08)</div>
+  </div>
+  <div class="swatch">
+    <div class="preview" style="border:2px solid rgba(255,255,255,0.15); background:transparent;"></div>
+    <div><div class="swatch-label">--color-border-strong</div><div class="swatch-name">Strong</div></div>
+    <div class="swatch-hex">rgba(255,255,255,0.15)</div>
+  </div>
+  <div class="swatch">
+    <div class="preview" style="border:2px solid rgba(255,255,255,0.35); background:transparent;"></div>
+    <div><div class="swatch-label">--color-border-focus</div><div class="swatch-name">Focus</div></div>
+    <div class="swatch-hex">rgba(255,255,255,0.35)</div>
+  </div>
+  <div class="swatch">
+    <div class="preview" style="background:rgba(255,255,255,0.06);"></div>
+    <div><div class="swatch-label">--color-accent-subtle</div><div class="swatch-name">Accent Subtle</div></div>
+    <div class="swatch-hex">rgba(255,255,255,0.06)</div>
+  </div>
+  <div class="swatch">
+    <div class="preview" style="background:rgba(255,255,255,0.12);"></div>
+    <div><div class="swatch-label">--color-accent-muted</div><div class="swatch-name">Accent Muted</div></div>
+    <div class="swatch-hex">rgba(255,255,255,0.12)</div>
+  </div>
+</div>
+</body>
+</html>

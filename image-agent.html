@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Agent — House of UGC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #f7f6ff;
+  --bg2:    #ffffff;
+  --surface:#f0eeff;
+  --fg:     #0d0d14;
+  --fg2:    #4b4a6a;
+  --fg3:    #8b88b0;
+  --border: rgba(100,80,200,.12);
+  --border2:rgba(100,80,200,.22);
+  --a1: #7c3aed;
+  --a2: #db2777;
+  --grad: linear-gradient(135deg, #7c3aed, #db2777);
+  --grad-soft: linear-gradient(135deg, rgba(124,58,237,.08), rgba(219,39,119,.06));
+  --r-sm:4px; --r-md:8px; --r-lg:12px; --r-xl:20px; --r-full:9999px;
+  --shadow: 0 4px 24px rgba(124,58,237,.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;font-size:16px}
+body{background:var(--bg);color:var(--fg);font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+:focus-visible{outline:2px solid var(--a1);outline-offset:2px;border-radius:var(--r-sm)}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-thumb{background:rgba(124,58,237,.2);border-radius:var(--r-full)}
+
+/* NAV */
+nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:60px;flex-shrink:0;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  box-shadow:0 1px 0 var(--border);
+}
+.nav-logo{
+  font-family:'Space Grotesk',system-ui,sans-serif;font-weight:800;font-size:15px;letter-spacing:-.03em;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-link{
+  font-size:12px;font-weight:500;color:var(--fg2);text-decoration:none;
+  padding:6px 12px;border-radius:var(--r-md);border:1px solid var(--border2);
+  transition:all .15s;
+}
+.nav-link:hover{color:var(--a1);border-color:var(--a1);background:rgba(124,58,237,.05)}
+.nav-badge{
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.04em;
+  color:var(--fg3);border:1px solid var(--border2);padding:3px 10px;border-radius:var(--r-full);
+}
+
+/* HERO HEADER */
+.page-header{
+  text-align:center;padding:52px 24px 40px;
+  background:linear-gradient(180deg, rgba(124,58,237,.05) 0%, transparent 100%);
+  border-bottom:1px solid var(--border);
+}
+.page-header h1{
+  font-family:'Space Grotesk',system-ui,sans-serif;font-size:32px;font-weight:800;
+  letter-spacing:-.03em;margin-bottom:10px;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.page-header p{font-size:15px;color:var(--fg2);max-width:480px;margin:0 auto;line-height:1.6}
+
+/* MAIN LAYOUT */
+main{flex:1;max-width:1100px;margin:0 auto;width:100%;padding:40px 24px 80px;display:flex;flex-direction:column;gap:32px}
+
+/* FORM CARD */
+.form-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-xl);
+  padding:32px;box-shadow:var(--shadow);
+}
+.form-card h2{
+  font-family:'Space Grotesk',system-ui,sans-serif;font-size:16px;font-weight:700;
+  letter-spacing:-.01em;margin-bottom:24px;color:var(--fg);
+  display:flex;align-items:center;gap:8px;
+}
+.form-card h2 span{
+  width:28px;height:28px;border-radius:var(--r-md);background:var(--grad);
+  display:inline-flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;
+}
+.form-grid{display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:end}
+@media(max-width:700px){.form-grid{grid-template-columns:1fr}}
+
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--fg3)}
+.field input,.field textarea,.field select{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r-md);padding:11px 14px;font-size:14px;
+  color:var(--fg);font-family:'Inter',system-ui,sans-serif;outline:none;width:100%;
+  transition:border-color .15s,box-shadow .15s;
+}
+.field input:focus,.field textarea:focus,.field select:focus{
+  border-color:var(--a1);box-shadow:0 0 0 3px rgba(124,58,237,.12);
+}
+.field textarea{resize:none;line-height:1.6}
+.field select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b88b0' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+
+.select-pair{display:flex;gap:12px}
+.select-pair .field{flex:1}
+
+.btn-gen{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 24px;
+  background:var(--grad);color:#fff;
+  font-size:14px;font-weight:700;
+  border:none;border-radius:var(--r-md);cursor:pointer;
+  font-family:'Inter',system-ui,sans-serif;white-space:nowrap;
+  transition:opacity .15s,transform .1s;
+  box-shadow:0 4px 16px rgba(124,58,237,.3);
+}
+.btn-gen:hover{opacity:.88}
+.btn-gen:active{transform:scale(.98)}
+.btn-gen:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-spinner{
+  width:16px;height:16px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;
+  animation:spin .7s linear infinite;display:none;
+}
+.loading .btn-spinner{display:block}
+.loading .btn-arrow,.loading .btn-text{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ERROR */
+.error-banner{
+  display:none;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);
+  border-radius:var(--r-md);padding:12px 16px;font-size:13px;color:#ef4444;
+}
+.error-banner.show{display:block}
+
+/* RESULT SECTION */
+.result-section{display:none}
+.result-section.show{display:block}
+
+.result-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:20px;flex-wrap:wrap;gap:12px;
+}
+.result-header h2{
+  font-family:'Space Grotesk',system-ui,sans-serif;font-size:18px;font-weight:700;
+  letter-spacing:-.02em;
+}
+.result-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+.btn-action{
+  display:flex;align-items:center;gap:7px;
+  padding:8px 16px;font-size:13px;font-weight:600;
+  border:none;border-radius:var(--r-md);cursor:pointer;
+  font-family:'Inter',system-ui,sans-serif;transition:all .15s;
+}
+.btn-regen{background:var(--surface);color:var(--a1);border:1px solid var(--border2)}
+.btn-regen:hover{background:rgba(124,58,237,.1);border-color:var(--a1)}
+.btn-dl{background:var(--grad);color:#fff;box-shadow:0 2px 10px rgba(124,58,237,.25)}
+.btn-dl:hover{opacity:.88}
+.btn-copy{background:var(--surface);color:var(--fg2);border:1px solid var(--border2)}
+.btn-copy:hover{color:var(--fg);border-color:var(--border2)}
+.btn-copy.copied{color:var(--a1);border-color:var(--a1)}
+
+/* SVG CANVAS */
+.svg-canvas{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-xl);
+  overflow:hidden;box-shadow:var(--shadow);
+}
+.svg-tabs{
+  display:flex;gap:2px;padding:12px 16px 0;border-bottom:1px solid var(--border);
+  background:var(--surface);
+}
+.svg-tab{
+  font-size:12px;font-weight:500;color:var(--fg3);
+  padding:6px 14px;border-radius:var(--r-md) var(--r-md) 0 0;
+  border:none;background:none;cursor:pointer;
+  font-family:'Inter',system-ui,sans-serif;transition:all .15s;
+}
+.svg-tab.active{background:var(--bg2);color:var(--a1);font-weight:600}
+
+.svg-preview{
+  display:flex;align-items:center;justify-content:center;
+  min-height:360px;padding:40px;
+  background:repeating-conic-gradient(rgba(124,58,237,.04) 0% 25%, transparent 0% 50%) 0 0/20px 20px;
+}
+.svg-preview svg{max-width:100%;height:auto;border-radius:var(--r-md)}
+.svg-code-pane{
+  display:none;padding:24px;overflow:auto;max-height:420px;
+  background:var(--fg);
+}
+.svg-code-pane.show{display:block}
+.svg-code-pane pre{
+  font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.7;
+  color:#a5b4fc;white-space:pre-wrap;word-break:break-all;
+}
+.svg-preview.hide{display:none}
+
+/* LOADING OVERLAY */
+.svg-loading{
+  display:none;align-items:center;justify-content:center;flex-direction:column;
+  min-height:360px;gap:16px;
+}
+.svg-loading.show{display:flex}
+.ring{
+  width:44px;height:44px;
+  border:3px solid rgba(124,58,237,.2);
+  border-top-color:var(--a1);
+  border-radius:50%;animation:spin .9s linear infinite;
+}
+.svg-loading p{font-size:13px;color:var(--fg2)}
+
+/* VARIANTS GRID */
+.variants-section{display:none;margin-top:24px}
+.variants-section.show{display:block}
+.variants-label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--fg3);margin-bottom:14px}
+.variants-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.variant-card{
+  background:var(--bg2);border:2px solid var(--border);border-radius:var(--r-lg);
+  padding:16px;cursor:pointer;transition:all .15s;text-align:center;
+}
+.variant-card:hover{border-color:var(--a1);box-shadow:0 4px 20px rgba(124,58,237,.15)}
+.variant-card.active{border-color:var(--a1);background:rgba(124,58,237,.04)}
+.variant-card svg{max-width:100%;height:auto;border-radius:var(--r-sm)}
+.variant-label{font-size:11px;color:var(--fg3);margin-top:8px}
+
+/* TIPS */
+.tips{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-xl);
+  padding:28px 32px;
+}
+.tips h3{font-family:'Space Grotesk',system-ui,sans-serif;font-size:14px;font-weight:700;margin-bottom:16px;color:var(--fg)}
+.tips-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.tip-chip{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-md);
+  padding:10px 14px;cursor:pointer;transition:all .15s;
+}
+.tip-chip:hover{border-color:var(--a1);background:rgba(124,58,237,.06)}
+.tip-chip span{font-size:13px;font-weight:500;color:var(--fg2)}
+.tip-icon{font-size:18px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<nav>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span class="nav-logo">House of UGC</span>
+    <span style="width:1px;height:16px;background:var(--border2);display:inline-block"></span>
+    <span style="font-size:13px;color:var(--fg3);font-weight:500">Image Agent</span>
+  </div>
+  <div class="nav-right">
+    <a href="/generator.html" class="nav-link">⚡ Webpage Generator</a>
+    <span class="nav-badge">Powered by Claude</span>
+  </div>
+</nav>
+
+<div class="page-header">
+  <h1>AI Image & Graphics Agent</h1>
+  <p>Describe what you need — Claude generates SVG graphics, logos, illustrations, and patterns ready for your website.</p>
+</div>
+
+<main>
+
+  <!-- FORM -->
+  <div class="form-card">
+    <h2><span>✦</span> Describe your graphic</h2>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="field">
+        <label for="iDesc">What do you need?</label>
+        <textarea id="iDesc" rows="3" placeholder="e.g. A modern abstract hero background for a SaaS app, purple and blue tones with flowing shapes"></textarea>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
+        <div class="field" style="flex:1;min-width:150px">
+          <label for="iType">Graphic Type</label>
+          <select id="iType">
+            <option value="illustration">Hero Illustration</option>
+            <option value="logo">Logo / Brand Mark</option>
+            <option value="pattern">Background Pattern</option>
+            <option value="icon">Icon Set</option>
+            <option value="hero">Abstract Hero Background</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1;min-width:150px">
+          <label for="iStyle">Style</label>
+          <select id="iStyle">
+            <option value="colorful">Colorful &amp; Vibrant</option>
+            <option value="minimal">Minimal &amp; Clean</option>
+            <option value="geometric">Geometric</option>
+            <option value="abstract">Abstract &amp; Artistic</option>
+            <option value="organic">Organic &amp; Soft</option>
+          </select>
+        </div>
+        <button type="button" class="btn-gen" id="genBtn" onclick="generate()">
+          <div class="btn-spinner"></div>
+          <span class="btn-text">Generate Graphic</span>
+          <svg class="btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="error-banner" id="errMsg" style="margin-top:14px"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-section" id="resultSection">
+    <div class="result-header">
+      <h2>Generated Graphic</h2>
+      <div class="result-actions">
+        <button type="button" class="btn-action btn-regen" onclick="generate()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Regenerate
+        </button>
+        <button type="button" class="btn-action btn-copy" id="copyBtn" onclick="copySvg()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy SVG
+        </button>
+        <button type="button" class="btn-action btn-dl" onclick="downloadSvg()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download SVG
+        </button>
+      </div>
+    </div>
+
+    <div class="svg-canvas">
+      <div class="svg-tabs">
+        <button class="svg-tab active" onclick="setSvgTab('preview')">Preview</button>
+        <button class="svg-tab" onclick="setSvgTab('code')">SVG Code</button>
+      </div>
+
+      <div id="svgLoading" class="svg-loading">
+        <div class="ring"></div>
+        <p>Claude is drawing your graphic…</p>
+      </div>
+      <div id="svgPreview" class="svg-preview">
+        <!-- SVG injected here -->
+      </div>
+      <div id="svgCodePane" class="svg-code-pane">
+        <pre id="svgCode"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROMPT TIPS -->
+  <div class="tips">
+    <h3>Try these prompts</h3>
+    <div class="tips-grid">
+      <div class="tip-chip" onclick="usePrompt('A modern fintech dashboard hero illustration with floating cards and charts','illustration','colorful')">
+        <span class="tip-icon">📊</span>
+        <span>Fintech dashboard illustration</span>
+      </div>
+      <div class="tip-chip" onclick="usePrompt('Minimalist letter mark logo for a photography studio','logo','minimal')">
+        <span class="tip-icon">📷</span>
+        <span>Photography studio logo</span>
+      </div>
+      <div class="tip-chip" onclick="usePrompt('Abstract purple and indigo gradient hero background with flowing waves','hero','abstract')">
+        <span class="tip-icon">🌊</span>
+        <span>Abstract gradient background</span>
+      </div>
+      <div class="tip-chip" onclick="usePrompt('Set of 6 e-commerce icons: cart, heart, search, user, bag, star','icon','minimal')">
+        <span class="tip-icon">🛒</span>
+        <span>E-commerce icon set</span>
+      </div>
+      <div class="tip-chip" onclick="usePrompt('Geometric hexagon repeating pattern in teal and navy','pattern','geometric')">
+        <span class="tip-icon">🔷</span>
+        <span>Geometric hex pattern</span>
+      </div>
+      <div class="tip-chip" onclick="usePrompt('Friendly illustration of a rocket launching from a laptop for a SaaS landing page','illustration','colorful')">
+        <span class="tip-icon">🚀</span>
+        <span>SaaS rocket illustration</span>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+let currentSvg = '';
+let svgActiveTab = 'preview';
+
+async function generate() {
+  const desc = document.getElementById('iDesc').value.trim();
+  const type = document.getElementById('iType').value;
+  const style= document.getElementById('iStyle').value;
+  const err  = document.getElementById('errMsg');
+  err.classList.remove('show');
+
+  if (!desc) { err.textContent = 'Please describe what graphic you need.'; err.classList.add('show'); return; }
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  btn.classList.add('loading');
+
+  document.getElementById('resultSection').classList.add('show');
+  document.getElementById('svgLoading').classList.add('show');
+  document.getElementById('svgPreview').classList.add('hide');
+  document.getElementById('svgCodePane').classList.remove('show');
+
+  try {
+    const res  = await fetch('/generate-graphic', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description: desc, type, style }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
+
+    currentSvg = data.svg;
+    document.getElementById('svgPreview').innerHTML = currentSvg;
+    document.getElementById('svgCode').textContent  = currentSvg;
+    document.getElementById('svgLoading').classList.remove('show');
+    document.getElementById('svgPreview').classList.remove('hide');
+    setSvgTab(svgActiveTab, true);
+  } catch (e) {
+    document.getElementById('svgLoading').classList.remove('show');
+    document.getElementById('svgPreview').classList.remove('hide');
+    err.textContent = e.message || 'Generation failed. Please try again.';
+    err.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+}
+
+function setSvgTab(tab, force) {
+  svgActiveTab = tab;
+  document.querySelectorAll('.svg-tab').forEach((b, i) => b.classList.toggle('active', i === (tab === 'preview' ? 0 : 1)));
+  document.getElementById('svgPreview').classList.toggle('hide', tab === 'code');
+  document.getElementById('svgCodePane').classList.toggle('show', tab === 'code');
+}
+
+function copySvg() {
+  if (!currentSvg) return;
+  navigator.clipboard.writeText(currentSvg).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.classList.add('copied');
+    btn.querySelector('span') && (btn.querySelector('span').textContent = 'Copied!');
+    setTimeout(() => { btn.classList.remove('copied'); btn.querySelector('span') && (btn.querySelector('span').textContent = 'Copy SVG'); }, 2000);
+  });
+}
+
+function downloadSvg() {
+  if (!currentSvg) return;
+  const desc = document.getElementById('iDesc').value.trim();
+  const slug = desc.slice(0, 30).replace(/[^a-z0-9]/gi, '-').toLowerCase();
+  const blob = new Blob([currentSvg], { type: 'image/svg+xml' });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), { href: url, download: slug + '.svg' });
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function usePrompt(desc, type, style) {
+  document.getElementById('iDesc').value = desc;
+  document.getElementById('iType').value = type;
+  document.getElementById('iStyle').value = style;
+  document.getElementById('iDesc').focus();
+}
+</script>
+
+</body>
+</html>

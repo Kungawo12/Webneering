@@ -1,0 +1,39 @@
+<!-- @dsCard group="Colors" viewport="700x160" name="Foreground" subtitle="Text and icon hierarchy — white alpha steps" -->
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="../styles.css">
+<style>
+body { margin: 0; background: var(--color-bg); font-family: var(--font-body); padding: 20px; }
+.row { display: flex; gap: 12px; }
+.swatch { flex: 1; border-radius: var(--radius-md); background: var(--color-surface); border: 1px solid var(--color-border); padding: 14px 12px; display: flex; flex-direction: column; justify-content: space-between; min-height: 100px; }
+.swatch-label { font-size: 11px; color: var(--color-fg-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.swatch-name  { font-size: 15px; font-weight: 600; }
+.swatch-hex   { font-size: 11px; font-family: var(--font-mono); margin-top: 8px; color: var(--color-fg-tertiary); }
+</style>
+</head>
+<body>
+<div class="row">
+  <div class="swatch">
+    <div><div class="swatch-label">--color-fg</div><div class="swatch-name" style="color:#FFFFFF">Primary</div></div>
+    <div class="swatch-hex">#FFFFFF / 100%</div>
+  </div>
+  <div class="swatch">
+    <div><div class="swatch-label">--color-fg-secondary</div><div class="swatch-name" style="color:rgba(255,255,255,0.65)">Secondary</div></div>
+    <div class="swatch-hex">rgba(255,255,255,0.65)</div>
+  </div>
+  <div class="swatch">
+    <div><div class="swatch-label">--color-fg-tertiary</div><div class="swatch-name" style="color:rgba(255,255,255,0.35)">Tertiary</div></div>
+    <div class="swatch-hex">rgba(255,255,255,0.35)</div>
+  </div>
+  <div class="swatch">
+    <div><div class="swatch-label">--color-fg-disabled</div><div class="swatch-name" style="color:rgba(255,255,255,0.2)">Disabled</div></div>
+    <div class="swatch-hex">rgba(255,255,255,0.20)</div>
+  </div>
+  <div class="swatch">
+    <div><div class="swatch-label">--color-fg-inverse</div><div class="swatch-name" style="color:#0A0A0A;background:#fff;border-radius:4px;padding:0 4px;display:inline-block">Inverse</div></div>
+    <div class="swatch-hex">#0A0A0A</div>
+  </div>
+</div>
+</body>
+</html>

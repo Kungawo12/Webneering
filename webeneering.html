@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Webeneering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #0A0A0A;
+  --bg-el:     #111111;
+  --surface:   #141414;
+  --surface-h: #1E1E1E;
+  --fg:        #FFFFFF;
+  --fg2:       rgba(255,255,255,.65);
+  --fg3:       rgba(255,255,255,.35);
+  --fg4:       rgba(255,255,255,.18);
+  --border:    rgba(255,255,255,.08);
+  --border2:   rgba(255,255,255,.15);
+  --success:   #4ADE80;
+  --danger:    #F87171;
+  --r-sm:4px; --r-md:8px; --r-lg:12px; --r-xl:16px; --r-full:9999px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+html{-webkit-font-smoothing:antialiased;font-size:16px}
+body{background:var(--bg);color:var(--fg);font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column}
+:focus-visible{outline:2px solid rgba(255,255,255,.4);outline-offset:2px;border-radius:var(--r-sm)}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:var(--r-full)}
+
+/* ── NAV ── */
+nav{
+  display:flex;align-items:center;justify-content:space-between;
+  height:52px;padding:0 20px;flex-shrink:0;
+  border-bottom:1px solid var(--border);
+  background:rgba(10,10,10,.97);
+  position:relative;z-index:10;
+}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-logo{
+  font-family:'Space Grotesk',system-ui,sans-serif;font-weight:800;font-size:16px;
+  letter-spacing:-.03em;color:var(--fg);
+}
+.nav-dot{width:6px;height:6px;border-radius:var(--r-full);background:var(--fg);opacity:.4}
+.nav-sub{font-size:12px;color:var(--fg3);font-weight:500;font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+.nav-right{display:flex;align-items:center;gap:8px}
+.nav-pill{
+  font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  padding:4px 10px;border-radius:var(--r-full);border:1px solid var(--border2);
+  color:var(--fg3);
+}
+.nav-pill.gemini{color:#60a5fa;border-color:rgba(96,165,250,.3)}
+.nav-pill.claude{color:#a78bfa;border-color:rgba(167,139,250,.3)}
+
+/* ── LAYOUT ── */
+.app{flex:1;display:grid;grid-template-columns:360px 1fr;overflow:hidden;min-height:0}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  background:var(--bg);
+}
+.sidebar-scroll{flex:1;overflow-y:auto;padding:20px}
+.sidebar-footer{padding:14px 20px;border-top:1px solid var(--border);flex-shrink:0}
+
+/* ── FORM ELEMENTS ── */
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.field label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--fg3)}
+.field input,.field textarea{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:10px 12px;
+  color:var(--fg);font-family:'Inter',system-ui,sans-serif;font-size:13px;
+  width:100%;resize:vertical;
+  transition:border-color .15s;
+}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--border2)}
+.field input::placeholder,.field textarea::placeholder{color:var(--fg4)}
+
+/* ── TYPE CHIPS ── */
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.type-chip{
+  padding:7px 10px;border-radius:var(--r-md);border:1px solid var(--border);
+  background:var(--surface);color:var(--fg3);font-size:12px;font-weight:500;
+  cursor:pointer;text-align:center;transition:all .15s;
+}
+.type-chip:hover{border-color:var(--border2);color:var(--fg2)}
+.type-chip.active{border-color:var(--fg2);background:rgba(255,255,255,.06);color:var(--fg)}
+
+/* ── GENERATE BUTTON ── */
+.btn-generate{
+  width:100%;padding:12px;border-radius:var(--r-lg);border:none;cursor:pointer;
+  background:var(--fg);color:var(--bg);
+  font-family:'Space Grotesk',system-ui,sans-serif;font-size:14px;font-weight:700;
+  letter-spacing:-.01em;
+  transition:opacity .15s,transform .1s;
+}
+.btn-generate:hover{opacity:.9}
+.btn-generate:active{transform:scale(.98)}
+.btn-generate:disabled{opacity:.35;cursor:not-allowed;transform:none}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:var(--border);margin:20px 0}
+.section-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg4);margin-bottom:10px}
+
+/* ── CHAT ── */
+.chat-area{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.chat-msg{
+  padding:10px 13px;border-radius:var(--r-lg);font-size:13px;line-height:1.5;
+  border:1px solid var(--border);
+}
+.chat-msg.ai{background:var(--surface);color:var(--fg2)}
+.chat-msg.user{background:rgba(255,255,255,.05);color:var(--fg);border-color:var(--border2)}
+
+.suggestions{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.suggestion-chip{
+  font-size:11px;font-weight:500;padding:5px 10px;
+  border-radius:var(--r-full);border:1px solid var(--border);
+  color:var(--fg3);cursor:pointer;background:var(--surface);
+  transition:all .15s;
+}
+.suggestion-chip:hover{border-color:var(--border2);color:var(--fg2);background:var(--surface-h)}
+
+.chat-input-wrap{display:flex;gap:8px}
+.chat-input{
+  flex:1;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:9px 12px;
+  color:var(--fg);font-family:'Inter',system-ui,sans-serif;font-size:13px;
+  transition:border-color .15s;
+}
+.chat-input:focus{outline:none;border-color:var(--border2)}
+.chat-input::placeholder{color:var(--fg4)}
+.btn-send{
+  padding:9px 14px;border-radius:var(--r-md);border:1px solid var(--border2);
+  background:var(--surface);color:var(--fg2);cursor:pointer;
+  font-size:13px;font-weight:600;transition:all .15s;white-space:nowrap;
+}
+.btn-send:hover{background:var(--surface-h);color:var(--fg)}
+.btn-send:disabled{opacity:.35;cursor:not-allowed}
+
+/* ── DOWNLOAD ── */
+.btn-download{
+  width:100%;padding:10px;border-radius:var(--r-md);border:1px solid var(--border2);
+  background:transparent;color:var(--fg2);
+  font-family:'Inter',system-ui,sans-serif;font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .15s;margin-top:8px;
+}
+.btn-download:hover{background:var(--surface-h);color:var(--fg);border-color:rgba(255,255,255,.3)}
+.btn-download:disabled{opacity:.35;cursor:not-allowed}
+
+/* ── PREVIEW PANEL ── */
+.preview{
+  display:flex;flex-direction:column;
+  background:var(--bg-el);
+  overflow:hidden;position:relative;
+}
+.preview-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;height:40px;flex-shrink:0;
+  border-bottom:1px solid var(--border);
+  background:var(--bg);
+}
+.preview-dots{display:flex;gap:6px}
+.dot{width:10px;height:10px;border-radius:var(--r-full)}
+.dot.r{background:#FF5F57} .dot.y{background:#FEBC2E} .dot.g{background:#28C840}
+.preview-label{font-size:11px;font-weight:500;color:var(--fg4);font-family:'JetBrains Mono',monospace}
+.preview-actions{display:flex;gap:8px}
+.preview-btn{
+  font-size:11px;font-weight:500;color:var(--fg3);
+  padding:3px 8px;border-radius:var(--r-sm);border:1px solid var(--border);
+  background:transparent;cursor:pointer;transition:all .15s;
+}
+.preview-btn:hover{color:var(--fg);border-color:var(--border2)}
+
+.preview-frame{flex:1;position:relative;overflow:hidden}
+iframe{width:100%;height:100%;border:none;background:#fff}
+
+/* ── LOADING OVERLAY ── */
+.loading-overlay{
+  position:absolute;inset:0;
+  background:rgba(10,10,10,.92);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:24px;z-index:20;
+  opacity:0;pointer-events:none;
+  transition:opacity .2s;
+}
+.loading-overlay.active{opacity:1;pointer-events:all}
+.loading-steps{display:flex;flex-direction:column;gap:12px;min-width:280px}
+.loading-step{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;border-radius:var(--r-lg);
+  border:1px solid var(--border);background:var(--surface);
+  font-size:13px;color:var(--fg3);
+  transition:all .3s;
+}
+.loading-step.active{border-color:var(--border2);color:var(--fg);background:var(--surface-h)}
+.loading-step.done{border-color:rgba(74,222,128,.3);color:var(--success)}
+.step-icon{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.spinner{
+  width:16px;height:16px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.15);
+  border-top-color:var(--fg2);
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── LANDING OVERLAY ── */
+.intro-overlay{
+  position:fixed;inset:0;z-index:100;
+  background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 24px;overflow-y:auto;
+  transition:opacity .35s,transform .35s;
+}
+.intro-overlay.hidden{opacity:0;pointer-events:none;transform:scale(1.02)}
+.intro-inner{display:flex;flex-direction:column;align-items:center;gap:0;max-width:680px;width:100%;text-align:center}
+.intro-wordmark{
+  font-family:'Space Grotesk',system-ui,sans-serif;font-weight:800;font-size:13px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--fg3);margin-bottom:32px;
+}
+.intro-headline{
+  font-family:'Space Grotesk',system-ui,sans-serif;font-weight:800;
+  font-size:clamp(32px,5vw,52px);letter-spacing:-.03em;line-height:1.08;
+  color:var(--fg);margin-bottom:16px;
+}
+.intro-headline em{font-style:normal;color:var(--fg3)}
+.intro-sub{font-size:15px;color:var(--fg3);line-height:1.65;max-width:480px;margin:0 auto 32px}
+.intro-agents{display:flex;gap:10px;justify-content:center;margin-bottom:40px}
+.intro-agent{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 16px;border-radius:var(--r-lg);border:1px solid var(--border);
+  background:var(--surface);
+}
+.intro-agent-dot{width:6px;height:6px;border-radius:var(--r-full)}
+.intro-agent-dot.g{background:#60a5fa}
+.intro-agent-dot.c{background:#a78bfa}
+.intro-agent-label{font-size:12px;font-weight:600;color:var(--fg2)}
+.intro-agent-desc{font-size:11px;color:var(--fg4);margin-top:1px}
+.intro-agent-inner{display:flex;flex-direction:column;text-align:left}
+.intro-cta{
+  padding:14px 36px;border-radius:var(--r-lg);border:none;cursor:pointer;
+  background:var(--fg);color:var(--bg);
+  font-family:'Space Grotesk',system-ui,sans-serif;font-size:15px;font-weight:700;
+  letter-spacing:-.01em;
+  transition:opacity .15s,transform .1s;margin-bottom:16px;
+}
+.intro-cta:hover{opacity:.88}
+.intro-cta:active{transform:scale(.97)}
+.intro-note{font-size:11px;color:var(--fg4);letter-spacing:.02em}
+.label-opt{color:var(--fg4);font-weight:400;text-transform:none;letter-spacing:0}
+#chatSection{display:none}
+#btnDownload{display:none}
+#previewFrame{display:none}
+
+/* ── EMPTY STATE ── */
+.empty-state{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;
+  padding:28px 24px;overflow-y:auto;
+}
+.empty-header{text-align:center;margin-bottom:20px}
+.empty-title{
+  font-family:'Space Grotesk',system-ui,sans-serif;
+  font-weight:700;font-size:22px;letter-spacing:-.02em;color:var(--fg);
+  margin-bottom:8px;
+}
+.empty-sub{font-size:13px;color:var(--fg3);line-height:1.6;max-width:380px;margin:0 auto}
+.empty-agents{display:flex;gap:10px;margin-top:12px;justify-content:center}
+.agent-badge{
+  padding:5px 12px;border-radius:var(--r-full);border:1px solid var(--border);
+  font-size:11px;font-weight:600;
+}
+.agent-badge.g{color:#60a5fa;border-color:rgba(96,165,250,.25);background:rgba(96,165,250,.06)}
+.agent-badge.c{color:#a78bfa;border-color:rgba(167,139,250,.25);background:rgba(167,139,250,.06)}
+
+/* ── GALLERY ── */
+.gallery-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg4);margin-bottom:10px;align-self:flex-start}
+.example-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}
+.example-card{cursor:pointer;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);background:var(--surface);transition:border-color .15s,transform .15s}
+.example-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+
+/* Mini preview anatomy */
+.ex-preview{width:100%;aspect-ratio:16/9;display:flex;flex-direction:column;overflow:hidden;background:var(--eb,#0A0A0A)}
+.ex-nav{height:18%;background:linear-gradient(90deg,var(--ep),var(--es));display:flex;align-items:center;padding:0 6px;gap:5px;flex-shrink:0}
+.ex-logo-bar{width:22px;height:4px;border-radius:3px;background:rgba(255,255,255,.8)}
+.ex-nav-links{display:flex;gap:3px;margin-left:auto}
+.ex-nav-links span{width:14px;height:3px;border-radius:2px;background:rgba(255,255,255,.5)}
+.ex-hero{flex:0 0 30%;background:linear-gradient(135deg,var(--ep),var(--es));opacity:.75}
+.ex-row{display:flex;gap:3px;padding:5px;flex:1}
+.ex-card-sm{flex:1;border-radius:3px;background:rgba(255,255,255,.07)}
+.ex-features{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:4px 5px;flex:1}
+.ex-feat{border-radius:3px;background:rgba(255,255,255,.07);min-height:10px}
+.ex-projects{display:flex;gap:4px;padding:5px;flex:1}
+.ex-proj{flex:1;border-radius:3px;background:rgba(255,255,255,.07)}
+.ex-pricing-row{display:flex;gap:3px;padding:0 5px 4px}
+.ex-price-card{flex:1;height:16px;border-radius:3px;background:rgba(255,255,255,.07)}
+.ex-price-card.highlight{background:linear-gradient(135deg,var(--ep),var(--es));opacity:.85}
+.ex-form-hint{margin:0 5px 5px;height:10px;border-radius:3px;background:rgba(255,255,255,.07)}
+.ex-meta{display:flex;align-items:center;gap:7px;padding:7px 9px}
+.ex-type-badge{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 6px;border-radius:var(--r-full);border:1px solid var(--border2);color:var(--fg3)}
+.ex-name{font-size:11px;font-weight:600;color:var(--fg2)}
+
+/* Per-card color themes */
+.ex-theme-coffee{--ep:#7C4A1E;--es:#D4834A;--eb:#1A0E05}
+.ex-theme-saas  {--ep:#6366F1;--es:#8B5CF6;--eb:#0D0B1E}
+.ex-theme-port  {--ep:#111111;--es:#444444;--eb:#FAFAFA}
+.ex-theme-store {--ep:#2D6A4F;--es:#74C69D;--eb:#F0FAF4}
+.ex-theme-book  {--ep:#B5838D;--es:#E5989B;--eb:#FFF0F3}
+.ex-theme-event {--ep:#0F172A;--es:#38BDF8;--eb:#020817}
+
+/* Light-background card overrides */
+.ex-preview.ex-light{background:var(--eb)}
+.ex-preview.ex-light .ex-card-sm,
+.ex-preview.ex-light .ex-proj,
+.ex-preview.ex-light .ex-form-hint{background:rgba(0,0,0,.07)}
+.ex-preview.ex-light .ex-feat{background:rgba(0,0,0,.06)}
+
+/* Event card specifics */
+.ex-theme-event .ex-hero{background:linear-gradient(135deg,#0F172A,#1E3A5F);opacity:1}
+.ex-theme-event .ex-feat{background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.18)}
+</style>
+</head>
+<body>
+
+<!-- ── LANDING INTRO OVERLAY ── -->
+<div class="intro-overlay" id="introOverlay">
+  <div class="intro-inner">
+    <div class="intro-wordmark">Webeneering · by House of UGC</div>
+    <h1 class="intro-headline">Two agents.<br><em>One complete website.</em></h1>
+    <p class="intro-sub">Describe your idea. Gemini designs the frontend, Claude engineers the backend. Download a production-ready project you can deploy anywhere in minutes.</p>
+    <div class="intro-agents">
+      <div class="intro-agent">
+        <div class="intro-agent-dot g"></div>
+        <div class="intro-agent-inner">
+          <span class="intro-agent-label">Gemini · UI/UX + Frontend</span>
+          <span class="intro-agent-desc">Color system, layout, Tailwind HTML</span>
+        </div>
+      </div>
+      <div class="intro-agent">
+        <div class="intro-agent-dot c"></div>
+        <div class="intro-agent-inner">
+          <span class="intro-agent-label">Claude · Backend Engineer</span>
+          <span class="intro-agent-desc">Express.js API, routes, data layer</span>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="intro-cta" onclick="startBuilding()">Start Building &rarr;</button>
+    <p class="intro-note">Free to use &nbsp;&middot;&nbsp; No account required &nbsp;&middot;&nbsp; You own the code</p>
+  </div>
+</div>
+
+<nav>
+  <div class="nav-brand">
+    <span class="nav-logo">Webeneering</span>
+    <span class="nav-dot"></span>
+    <span class="nav-sub">by House of UGC</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-pill gemini">Gemini · UI/UX</span>
+    <span class="nav-pill claude">Haiku · Backend</span>
+  </div>
+</nav>
+
+<div class="app">
+
+  <!-- ── SIDEBAR ── -->
+  <div class="sidebar">
+    <div class="sidebar-scroll" id="sidebarScroll">
+
+      <!-- Build form -->
+      <div id="buildForm">
+        <div class="section-label">New website</div>
+
+        <div class="field">
+          <label>Title</label>
+          <input type="text" id="title" placeholder="e.g. Bloom Coffee Co." maxlength="80">
+        </div>
+
+        <div class="field">
+          <label>Description</label>
+          <textarea id="description" rows="3" placeholder="A specialty coffee shop in Austin, TX. Serving single-origin espresso, pour-overs, and seasonal pastries. Warm, minimal aesthetic."></textarea>
+        </div>
+
+        <div class="field">
+          <label>Website type</label>
+          <div class="type-grid" id="typeGrid">
+            <div class="type-chip active" data-type="business">Business</div>
+            <div class="type-chip" data-type="restaurant">Restaurant</div>
+            <div class="type-chip" data-type="saas">SaaS</div>
+            <div class="type-chip" data-type="portfolio">Portfolio</div>
+            <div class="type-chip" data-type="store">Store</div>
+            <div class="type-chip" data-type="booking">Booking</div>
+            <div class="type-chip" data-type="blog">Blog</div>
+            <div class="type-chip" data-type="event">Event</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Key features <span class="label-opt">(optional)</span></label>
+          <textarea id="features" rows="2" placeholder="Online ordering, loyalty program, seasonal menu, gift cards"></textarea>
+        </div>
+      </div>
+
+      <!-- Chat / improve section (hidden until first generation) -->
+      <div id="chatSection">
+        <div class="divider"></div>
+        <div class="section-label">Refine</div>
+        <div class="chat-area" id="chatArea"></div>
+        <div class="suggestions" id="suggestionsWrap"></div>
+        <div class="chat-input-wrap">
+          <input class="chat-input" id="chatInput" type="text" placeholder="Change colors, add a section...">
+          <button type="button" class="btn-send" id="btnSend" onclick="sendImprovement()">Send</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="sidebar-footer">
+      <button type="button" class="btn-generate" id="btnGenerate" onclick="generate()">
+        Build website
+      </button>
+      <button type="button" class="btn-download" id="btnDownload" onclick="downloadProject()">
+        Download project ZIP
+      </button>
+    </div>
+  </div>
+
+  <!-- ── PREVIEW ── -->
+  <div class="preview" id="previewPanel">
+
+    <div class="preview-bar">
+      <div class="preview-dots">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      </div>
+      <span class="preview-label" id="previewLabel">preview</span>
+      <div class="preview-actions">
+        <button type="button" class="preview-btn" onclick="openInTab()">Open in tab ↗</button>
+        <button type="button" class="preview-btn" onclick="refreshPreview()">Refresh</button>
+      </div>
+    </div>
+
+    <div class="preview-frame">
+      <!-- Empty state with example gallery -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-header">
+          <div class="empty-title">What will you build?</div>
+          <div class="empty-sub">Describe your idea on the left. Gemini designs the frontend, Claude engineers the backend — you get a full deployable project.</div>
+          <div class="empty-agents">
+            <span class="agent-badge g">Gemini · UI/UX + Frontend</span>
+            <span class="agent-badge c">Haiku · Backend</span>
+          </div>
+        </div>
+        <div class="gallery-label">Click an example to start</div>
+        <div class="example-grid">
+
+          <div class="example-card" onclick="useExample('coffee','Coffee Shop','A cozy specialty coffee shop in Austin, TX. Serving single-origin espresso, pour-overs, and seasonal pastries in a warm, minimal space.','restaurant')">
+            <div class="ex-preview ex-theme-coffee">
+              <div class="ex-nav"><div class="ex-logo-bar"></div><div class="ex-nav-links"><span></span><span></span><span></span></div></div>
+              <div class="ex-hero"></div>
+              <div class="ex-row"><div class="ex-card-sm"></div><div class="ex-card-sm"></div><div class="ex-card-sm"></div></div>
+              <div class="ex-form-hint"></div>
+            </div>
+            <div class="ex-meta"><span class="ex-type-badge">Restaurant</span><span class="ex-name">Coffee Shop</span></div>
+          </div>
+
+          <div class="example-card" onclick="useExample('saas','LaunchPad Analytics','A SaaS dashboard for indie hackers. Real-time revenue tracking, churn analytics, MRR graphs, and customer cohort analysis.','saas')">
+            <div class="ex-preview ex-theme-saas">
+              <div class="ex-nav"><div class="ex-logo-bar"></div><div class="ex-nav-links"><span></span><span></span><span></span></div></div>
+              <div class="ex-hero"></div>
+              <div class="ex-features"><div class="ex-feat"></div><div class="ex-feat"></div><div class="ex-feat"></div><div class="ex-feat"></div><div class="ex-feat"></div><div class="ex-feat"></div></div>
+              <div class="ex-pricing-row"><div class="ex-price-card"></div><div class="ex-price-card highlight"></div><div class="ex-price-card"></div></div>
+            </div>
+            <div class="ex-meta"><span class="ex-type-badge">SaaS</span><span class="ex-name">Analytics Platform</span></div>
+          </div>
+
+          <div class="example-card" onclick="useExample('portfolio','Alex Kim Design','A minimal portfolio for a UI/UX designer and illustrator. Showcasing brand identity projects, mobile app designs, and editorial work.','portfolio')">
+            <div class="ex-preview ex-theme-port ex-light">
+              <div class="ex-nav"><div class="ex-logo-bar"></div><div class="ex-nav-links"><span></span><span></span><span></span></div></div>
+              <div class="ex-hero"></div>
+              <div class="ex-projects"><div class="ex-proj"></div><div class="ex-proj"></div><div class="ex-proj"></div></div>
+            </div>
+            <div class="ex-meta"><span class="ex-type-badge">Portfolio</span><span class="ex-name">Design Portfolio</span></div>
+          </div>
+
+          <div class="example-card" onclick="useExample('store','Bloom & Co.','An online plant and flower boutique. Seasonal arrangements, rare houseplants, custom gift boxes and next-day local delivery.','store')">
+            <div class="ex-preview ex-theme-store ex-light">
+              <div class="ex-nav"><div class="ex-logo-bar"></div><div class="ex-nav-links"><span></span><span></span><span></span></div></div>
+              <div class="ex-hero"></div>
+              <div class="ex-row"><div class="ex-card-sm"></div><div class="ex-card-sm"></div><div class="ex-card-sm"></div></div>
+            </div>
+            <div class="ex-meta"><span class="ex-type-badge">Store</span><span class="ex-name">Plant Boutique</span></div>
+          </div>
+
+          <div class="example-card" onclick="useExample('booking','Meridian Wellness','A premium wellness studio offering massage therapy, yoga, and acupuncture in Manhattan. Online booking with real-time slot availability.','booking')">
+            <div class="ex-preview ex-theme-book ex-light">
+              <div class="ex-nav"><div class="ex-logo-bar"></div><div class="ex-nav-links"><span></span><span></span><span></span></div></div>
+              <div class="ex-hero"></div>
+              <div class="ex-row"><div class="ex-card-sm"></div><div class="ex-card-sm"></div><div class="ex-card-sm"></div></div>
+              <div class="ex-form-hint"></div>
+            </div>
+            <div class="ex-meta"><span class="ex-type-badge">Booking</span><span class="ex-name">Wellness Studio</span></div>
+          </div>
+
+          <div class="example-card" onclick="useExample('event','BuilderConf 2026','A developer conference for AI-native builders. 3 days, 40 speakers, workshops on agents, RAG, and production LLM systems. San Francisco, Oct 2026.','event')">
+            <div class="ex-preview ex-theme-event">
+              <div class="ex-nav"><div class="ex-logo-bar"></div><div class="ex-nav-links"><span></span><span></span><span></span></div></div>
+              <div class="ex-hero"></div>
+              <div class="ex-features"><div class="ex-feat"></div><div class="ex-feat"></div><div class="ex-feat"></div><div class="ex-feat"></div></div>
+            </div>
+            <div class="ex-meta"><span class="ex-type-badge">Event</span><span class="ex-name">Tech Conference</span></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Loading overlay -->
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-steps" id="loadingSteps">
+          <div class="loading-step" id="step-design">
+            <div class="step-icon" id="icon-design"><div class="spinner"></div></div>
+            <span>Gemini · Creating design spec</span>
+          </div>
+          <div class="loading-step" id="step-frontend">
+            <div class="step-icon" id="icon-frontend">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            </div>
+            <span>Gemini · Designing frontend</span>
+          </div>
+          <div class="loading-step" id="step-backend">
+            <div class="step-icon" id="icon-backend">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+            <span>Sonnet · Engineering backend</span>
+          </div>
+          <div class="loading-step" id="step-assemble">
+            <div class="step-icon" id="icon-assemble">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <span>Assembling project</span>
+          </div>
+        </div>
+      </div>
+
+      <iframe id="previewFrame"></iframe>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let state = {
+  websiteType: 'business',
+  improvements: [],
+  iteration: 0,
+  currentHtml: null,
+  currentBackend: null,
+  designSpec: null,
+  generating: false,
+};
+
+// ── Type chip selection ──────────────────────────────────────────────────────
+document.querySelectorAll('.type-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.type-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    state.websiteType = chip.dataset.type;
+  });
+});
+
+// ── Chat enter key ───────────────────────────────────────────────────────────
+document.getElementById('chatInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendImprovement(); }
+});
+
+// ── Generate ─────────────────────────────────────────────────────────────────
+async function generate(extra) {
+  if (state.generating) return;
+  const title       = document.getElementById('title').value.trim();
+  const description = document.getElementById('description').value.trim();
+  const features    = document.getElementById('features').value.trim();
+
+  if (!title || !description) {
+    flashField(!title ? 'title' : 'description');
+    return;
+  }
+
+  if (extra) state.improvements.push(extra);
+  state.generating = true;
+  setLoadingState(true);
+  document.getElementById('btnGenerate').disabled = true;
+  document.getElementById('btnSend').disabled = true;
+
+  setStep('design', 'active');
+
+  try {
+    const res = await fetch('/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        description,
+        websiteType: state.websiteType,
+        features,
+        improvements: state.improvements,
+        iteration: state.iteration,
+        cachedDesignSpec: state.designSpec,
+      }),
+    });
+
+    setStep('design', 'done');
+    setStep('frontend', 'active');
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Generation failed');
+    }
+
+    setStep('frontend', 'done');
+    setStep('backend', 'active');
+
+    const data = await res.json();
+
+    setStep('backend', 'done');
+    setStep('assemble', 'active');
+
+    state.currentHtml    = data.html;
+    state.currentBackend = data.backendJs;
+    if (data.designSpec) state.designSpec = data.designSpec;
+    state.iteration++;
+
+    renderPreview(data.html);
+    showChat(data.message, data.suggestions);
+
+    setStep('assemble', 'done');
+    setTimeout(() => setLoadingState(false), 400);
+
+  } catch (err) {
+    setLoadingState(false);
+    addChatMessage('ai', '⚠ ' + (err.message || 'Something went wrong. Please try again.'));
+  } finally {
+    state.generating = false;
+    document.getElementById('btnGenerate').disabled = false;
+    document.getElementById('btnSend').disabled = false;
+  }
+}
+
+// ── Improvement ──────────────────────────────────────────────────────────────
+function sendImprovement() {
+  const input = document.getElementById('chatInput');
+  const text  = input.value.trim();
+  if (!text || state.generating) return;
+  input.value = '';
+  addChatMessage('user', text);
+  document.getElementById('suggestionsWrap').innerHTML = '';
+  generate(text);
+}
+
+function useSuggestion(text) {
+  addChatMessage('user', text);
+  document.getElementById('suggestionsWrap').innerHTML = '';
+  generate(text);
+}
+
+// ── Chat UI ───────────────────────────────────────────────────────────────────
+function showChat(message, suggestions) {
+  const section = document.getElementById('chatSection');
+  section.style.display = 'block';
+
+  addChatMessage('ai', message);
+
+  const wrap = document.getElementById('suggestionsWrap');
+  wrap.innerHTML = '';
+  (suggestions || []).forEach(s => {
+    const chip = document.createElement('div');
+    chip.className = 'suggestion-chip';
+    chip.textContent = s;
+    chip.onclick = () => useSuggestion(s);
+    wrap.appendChild(chip);
+  });
+
+  document.getElementById('btnDownload').style.display = 'block';
+  document.getElementById('btnGenerate').textContent = 'Regenerate';
+
+  // scroll sidebar to chat
+  setTimeout(() => {
+    const scroll = document.getElementById('sidebarScroll');
+    scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
+  }, 100);
+}
+
+function addChatMessage(role, text) {
+  const area = document.getElementById('chatArea');
+  const msg  = document.createElement('div');
+  msg.className = `chat-msg ${role}`;
+  msg.textContent = text;
+  area.appendChild(msg);
+  area.scrollTop = area.scrollHeight;
+}
+
+// ── Preview ───────────────────────────────────────────────────────────────────
+function renderPreview(html) {
+  const frame = document.getElementById('previewFrame');
+  document.getElementById('emptyState').style.display = 'none';
+  frame.style.display = 'block';
+  frame.srcdoc = html;
+
+  const title = document.getElementById('title').value.trim() || 'preview';
+  document.getElementById('previewLabel').textContent = title.toLowerCase();
+}
+
+function refreshPreview() {
+  if (state.currentHtml) renderPreview(state.currentHtml);
+}
+
+function openInTab() {
+  if (!state.currentHtml) return;
+  const blob = new Blob([state.currentHtml], { type: 'text/html' });
+  window.open(URL.createObjectURL(blob), '_blank');
+}
+
+// ── Download ──────────────────────────────────────────────────────────────────
+async function downloadProject() {
+  if (!state.currentHtml) return;
+  const btn = document.getElementById('btnDownload');
+  btn.disabled = true;
+  btn.textContent = 'Packaging…';
+
+  try {
+    const description = document.getElementById('description').value.trim();
+    const res = await fetch('/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        html: state.currentHtml,
+        backendJs: state.currentBackend,
+        description,
+        websiteType: state.websiteType,
+      }),
+    });
+    if (!res.ok) throw new Error('Download failed');
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'webeneering-project.zip'; a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    addChatMessage('ai', '⚠ Download failed: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Download project ZIP';
+  }
+}
+
+// ── Loading steps ─────────────────────────────────────────────────────────────
+function setLoadingState(on) {
+  const overlay = document.getElementById('loadingOverlay');
+  const frame   = document.getElementById('previewFrame');
+  const empty   = document.getElementById('emptyState');
+  if (on) {
+    overlay.classList.add('active');
+    // reset all steps
+    ['design','frontend','backend','assemble'].forEach(s => {
+      document.getElementById(`step-${s}`).className = 'loading-step';
+    });
+    document.getElementById('icon-design').innerHTML = '<div class="spinner"></div>';
+    document.getElementById('icon-frontend').innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>';
+    document.getElementById('icon-backend').innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+    document.getElementById('icon-assemble').innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+  } else {
+    overlay.classList.remove('active');
+  }
+}
+
+function setStep(id, status) {
+  const step = document.getElementById(`step-${id}`);
+  const icon = document.getElementById(`icon-${id}`);
+  step.className = `loading-step ${status}`;
+  if (status === 'active') {
+    icon.innerHTML = '<div class="spinner"></div>';
+  } else if (status === 'done') {
+    icon.innerHTML = '<svg width="16" height="16" fill="none" stroke="#4ADE80" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function flashField(id) {
+  const el = document.getElementById(id);
+  el.style.borderColor = 'rgba(248,113,113,.7)';
+  el.focus();
+  setTimeout(() => el.style.borderColor = '', 1200);
+}
+
+// ── Landing overlay ───────────────────────────────────────────────────────────
+function startBuilding() {
+  const overlay = document.getElementById('introOverlay');
+  overlay.classList.add('hidden');
+  localStorage.setItem('wbn-seen', '1');
+}
+
+if (localStorage.getItem('wbn-seen')) {
+  document.getElementById('introOverlay').classList.add('hidden');
+}
+
+// ── Example prefill ───────────────────────────────────────────────────────────
+function useExample(id, title, description, type) {
+  document.getElementById('title').value = title;
+  document.getElementById('description').value = description;
+  document.querySelectorAll('.type-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.type === type);
+  });
+  state.websiteType = type;
+}
+</script>
+
+</body>
+</html>

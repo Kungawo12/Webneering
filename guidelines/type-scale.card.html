@@ -1,0 +1,25 @@
+<!-- @dsCard group="Type" viewport="700x340" name="Type Scale" subtitle="Full size scale from xs (12px) to 7xl (72px)" -->
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="../styles.css">
+<style>
+body { margin: 0; background: var(--color-bg); font-family: var(--font-body); padding: 20px 24px; }
+.row { display: flex; align-items: baseline; gap: 16px; padding: 6px 0; border-bottom: 1px solid var(--color-border); }
+.row:last-child { border-bottom: none; }
+.size-label { font-size: 11px; font-family: var(--font-mono); color: var(--color-fg-tertiary); width: 100px; flex-shrink: 0; }
+.sample { color: var(--color-fg); font-family: var(--font-display); font-weight: 600; line-height: 1; white-space: nowrap; overflow: hidden; }
+</style>
+</head>
+<body>
+  <div class="row"><span class="size-label">7xl · 72px</span><span class="sample" style="font-size:var(--text-7xl)">Agency</span></div>
+  <div class="row"><span class="size-label">5xl · 48px</span><span class="sample" style="font-size:var(--text-5xl)">Strategy</span></div>
+  <div class="row"><span class="size-label">4xl · 36px</span><span class="sample" style="font-size:var(--text-4xl)">Performance</span></div>
+  <div class="row"><span class="size-label">3xl · 30px</span><span class="sample" style="font-size:var(--text-3xl)">Content Marketing</span></div>
+  <div class="row"><span class="size-label">2xl · 24px</span><span class="sample" style="font-size:var(--text-2xl); font-weight:600; font-family:var(--font-body)">Creative Direction</span></div>
+  <div class="row"><span class="size-label">xl · 20px</span><span class="sample" style="font-size:var(--text-xl); font-weight:500; font-family:var(--font-body)">User Generated Content</span></div>
+  <div class="row"><span class="size-label">base · 16px</span><span class="sample" style="font-size:var(--text-base); font-weight:400; font-family:var(--font-body); color:var(--color-fg-secondary)">Body text — clear, minimal, direct</span></div>
+  <div class="row"><span class="size-label">sm · 14px</span><span class="sample" style="font-size:var(--text-sm); font-weight:400; font-family:var(--font-body); color:var(--color-fg-secondary)">UI label and secondary content</span></div>
+  <div class="row"><span class="size-label">xs · 12px</span><span class="sample" style="font-size:var(--text-xs); font-weight:500; font-family:var(--font-body); color:var(--color-fg-tertiary); letter-spacing:0.08em; text-transform:uppercase">METADATA · TAG · CAPTION</span></div>
+</body>
+</html>

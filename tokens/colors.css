@@ -1,0 +1,59 @@
+/* ============================================================
+   House of UGC — Color Tokens
+   Strictly monochromatic premium dark palette.
+   ============================================================ */
+
+:root {
+  /* --- Base Backgrounds --- */
+  --color-bg:          #0A0A0A;   /* primary page background */
+  --color-bg-elevated: #111111;   /* elevated sections, alt bg */
+  --color-bg-overlay:  #1A1A1A;   /* overlays, drawers */
+
+  /* --- Surfaces (cards, panels, inputs) --- */
+  --color-surface:          #141414;
+  --color-surface-elevated: #1E1E1E;
+  --color-surface-sunken:   #0D0D0D;
+
+  /* --- Foreground / Text --- */
+  --color-fg:           #FFFFFF;
+  --color-fg-secondary: rgba(255, 255, 255, 0.65);
+  --color-fg-tertiary:  rgba(255, 255, 255, 0.35);
+  --color-fg-disabled:  rgba(255, 255, 255, 0.2);
+  --color-fg-inverse:   #0A0A0A;
+
+  /* --- Borders --- */
+  --color-border:       rgba(255, 255, 255, 0.08);
+  --color-border-strong:rgba(255, 255, 255, 0.15);
+  --color-border-focus: rgba(255, 255, 255, 0.35);
+  --color-border-subtle:rgba(255, 255, 255, 0.05);
+
+  /* --- Accent (white-on-dark) --- */
+  --color-accent:        #FFFFFF;
+  --color-accent-subtle: rgba(255, 255, 255, 0.06);
+  --color-accent-muted:  rgba(255, 255, 255, 0.12);
+
+  /* --- Functional / Semantic --- */
+  --color-success:        #4ADE80;   /* green — confirmations */
+  --color-success-subtle: rgba(74, 222, 128, 0.1);
+  --color-warning:        #FBBF24;   /* amber — caution */
+  --color-warning-subtle: rgba(251, 191, 36, 0.1);
+  --color-danger:         #F87171;   /* red — errors / destructive */
+  --color-danger-subtle:  rgba(248, 113, 113, 0.1);
+  --color-info:           rgba(255, 255, 255, 0.5); /* neutral */
+
+  /* --- Semantic Aliases --- */
+  --bg-primary:    var(--color-bg);
+  --bg-secondary:  var(--color-bg-elevated);
+  --bg-card:       var(--color-surface);
+  --bg-overlay:    var(--color-bg-overlay);
+
+  --text-primary:   var(--color-fg);
+  --text-secondary: var(--color-fg-secondary);
+  --text-muted:     var(--color-fg-tertiary);
+  --text-disabled:  var(--color-fg-disabled);
+  --text-inverse:   var(--color-fg-inverse);
+
+  --border-default: var(--color-border);
+  --border-strong:  var(--color-border-strong);
+  --border-focus:   var(--color-border-focus);
+}

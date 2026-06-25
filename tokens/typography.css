@@ -1,0 +1,56 @@
+/* ============================================================
+   House of UGC — Typography Tokens
+   Display: Space Grotesk | Body: Inter | Mono: JetBrains Mono
+   ============================================================ */
+
+:root {
+  /* --- Font Families --- */
+  --font-display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  /* --- Type Scale (rem / px equivalent at 16px root) --- */
+  --text-xs:   0.75rem;    /* 12px */
+  --text-sm:   0.875rem;   /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-lg:   1.125rem;   /* 18px */
+  --text-xl:   1.25rem;    /* 20px */
+  --text-2xl:  1.5rem;     /* 24px */
+  --text-3xl:  1.875rem;   /* 30px */
+  --text-4xl:  2.25rem;    /* 36px */
+  --text-5xl:  3rem;       /* 48px */
+  --text-6xl:  3.75rem;    /* 60px */
+  --text-7xl:  4.5rem;     /* 72px */
+  --text-8xl:  6rem;       /* 96px */
+
+  /* --- Font Weights --- */
+  --weight-regular:   400;
+  --weight-medium:    500;
+  --weight-semibold:  600;
+  --weight-bold:      700;
+  --weight-extrabold: 800;
+
+  /* --- Line Heights --- */
+  --leading-tight:  1.1;   /* display / hero headlines */
+  --leading-snug:   1.25;  /* headings */
+  --leading-normal: 1.4;   /* UI labels */
+  --leading-relaxed:1.6;   /* body copy */
+  --leading-loose:  1.75;  /* long-form prose */
+
+  /* --- Letter Spacing --- */
+  --tracking-tightest: -0.04em;  /* hero display */
+  --tracking-tight:    -0.02em;  /* headings */
+  --tracking-normal:    0em;     /* body */
+  --tracking-wide:      0.04em;  /* small labels */
+  --tracking-wider:     0.08em;  /* ALL CAPS tags */
+  --tracking-widest:    0.12em;  /* decorative caps */
+
+  /* --- Semantic Type Roles --- */
+  --type-hero:        var(--font-display);
+  --type-heading:     var(--font-display);
+  --type-subheading:  var(--font-body);
+  --type-body:        var(--font-body);
+  --type-label:       var(--font-body);
+  --type-caption:     var(--font-body);
+  --type-code:        var(--font-mono);
+}

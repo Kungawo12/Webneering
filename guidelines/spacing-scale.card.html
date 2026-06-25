@@ -1,0 +1,44 @@
+<!-- @dsCard group="Spacing" viewport="700x200" name="Spacing Scale" subtitle="4px base unit — space-1 (4px) through space-32 (128px)" -->
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="../styles.css">
+<style>
+body { margin: 0; background: var(--color-bg); font-family: var(--font-body); padding: 20px 24px; }
+.track { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 8px; }
+.bar { background: var(--color-fg); border-radius: 2px; flex-shrink: 0; opacity: 0.9; }
+.labels { display: flex; gap: 8px; align-items: flex-start; }
+.lbl { font-size: 10px; font-family: var(--font-mono); color: var(--color-fg-tertiary); text-align: center; }
+</style>
+</head>
+<body>
+  <div class="track">
+    <div class="bar" style="width:4px;  height:4px;"></div>
+    <div class="bar" style="width:8px;  height:8px;"></div>
+    <div class="bar" style="width:12px; height:12px;"></div>
+    <div class="bar" style="width:16px; height:16px;"></div>
+    <div class="bar" style="width:20px; height:20px;"></div>
+    <div class="bar" style="width:24px; height:24px;"></div>
+    <div class="bar" style="width:32px; height:32px;"></div>
+    <div class="bar" style="width:40px; height:40px;"></div>
+    <div class="bar" style="width:48px; height:48px;"></div>
+    <div class="bar" style="width:64px; height:64px;"></div>
+    <div class="bar" style="width:80px; height:80px; opacity:0.5;"></div>
+    <div class="bar" style="width:96px; height:96px; opacity:0.3;"></div>
+  </div>
+  <div class="labels">
+    <div class="lbl" style="width:4px">1</div>
+    <div class="lbl" style="width:8px">2</div>
+    <div class="lbl" style="width:12px">3</div>
+    <div class="lbl" style="width:16px">4</div>
+    <div class="lbl" style="width:20px">5</div>
+    <div class="lbl" style="width:24px">6</div>
+    <div class="lbl" style="width:32px">8</div>
+    <div class="lbl" style="width:40px">10</div>
+    <div class="lbl" style="width:48px">12</div>
+    <div class="lbl" style="width:64px">16</div>
+    <div class="lbl" style="width:80px">20</div>
+    <div class="lbl" style="width:96px">24</div>
+  </div>
+</body>
+</html>

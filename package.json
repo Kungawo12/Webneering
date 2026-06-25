@@ -1,0 +1,17 @@
+{
+  "name": "house-of-ugc-generator",
+  "version": "1.0.0",
+  "description": "AI webpage generator backed by Claude API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@google/generative-ai": "^0.24.1",
+    "archiver": "^8.0.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}

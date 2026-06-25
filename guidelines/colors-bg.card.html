@@ -1,0 +1,39 @@
+<!-- @dsCard group="Colors" viewport="700x160" name="Backgrounds" subtitle="Primary, elevated, overlay, surface layers" -->
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="../styles.css">
+<style>
+body { margin: 0; background: var(--color-bg); font-family: var(--font-body); padding: 20px; }
+.row { display: flex; gap: 12px; align-items: stretch; }
+.swatch { flex: 1; border-radius: var(--radius-md); border: 1px solid var(--color-border); padding: 14px 12px; display: flex; flex-direction: column; justify-content: space-between; min-height: 100px; }
+.swatch-label { font-size: 11px; color: var(--color-fg-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.swatch-name  { font-size: 13px; font-weight: 500; color: var(--color-fg); }
+.swatch-hex   { font-size: 11px; color: var(--color-fg-secondary); font-family: var(--font-mono); margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="row">
+  <div class="swatch" style="background:#0A0A0A">
+    <div><div class="swatch-label">--color-bg</div><div class="swatch-name">Primary BG</div></div>
+    <div class="swatch-hex">#0A0A0A</div>
+  </div>
+  <div class="swatch" style="background:#111111">
+    <div><div class="swatch-label">--color-bg-elevated</div><div class="swatch-name">Elevated BG</div></div>
+    <div class="swatch-hex">#111111</div>
+  </div>
+  <div class="swatch" style="background:#1A1A1A">
+    <div><div class="swatch-label">--color-bg-overlay</div><div class="swatch-name">Overlay BG</div></div>
+    <div class="swatch-hex">#1A1A1A</div>
+  </div>
+  <div class="swatch" style="background:#141414">
+    <div><div class="swatch-label">--color-surface</div><div class="swatch-name">Surface</div></div>
+    <div class="swatch-hex">#141414</div>
+  </div>
+  <div class="swatch" style="background:#1E1E1E">
+    <div><div class="swatch-label">--color-surface-elevated</div><div class="swatch-name">Surface Elevated</div></div>
+    <div class="swatch-hex">#1E1E1E</div>
+  </div>
+</div>
+</body>
+</html>
