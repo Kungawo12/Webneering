@@ -1,15 +1,23 @@
 {
   "version": 2,
   "builds": [
-    { "src": "server.js", "use": "@vercel/node" }
+    {
+      "src": "server.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "*.html",
+          "*.css",
+          "tokens/**",
+          "assets/**",
+          "components/**",
+          "guidelines/**",
+          "ui_kits/**"
+        ]
+      }
+    }
   ],
   "routes": [
-    { "src": "/build",            "dest": "server.js" },
-    { "src": "/build-project",    "dest": "server.js" },
-    { "src": "/create",           "dest": "server.js" },
-    { "src": "/download",         "dest": "server.js" },
-    { "src": "/generate",         "dest": "server.js" },
-    { "src": "/generate-graphic", "dest": "server.js" },
-    { "src": "/(.*)",             "dest": "/$1"       }
+    { "src": "/(.*)", "dest": "server.js" }
   ]
 }
