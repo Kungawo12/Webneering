@@ -10,7 +10,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'your-api-key-here') {
-  console.error('\n❌  No Anthropic API key found.\n'); process.exit(1);
+  console.error('\n❌  No Anthropic API key found.\n');
+  if (require.main === module) process.exit(1);
 }
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -714,11 +715,17 @@ function clean(text) {
     .replace(/^```xml\s*/i,'').replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/\s*```$/i,'').trim();
 }
 
-app.listen(PORT, () => {
-  console.log(`\n✅  Server running at http://localhost:${PORT}`);
-  console.log(`   🚀  Webeneering      : http://localhost:${PORT}/webeneering.html`);
-  console.log(`   🏗️  Builder (legacy) : http://localhost:${PORT}/builder.html`);
-  console.log(`   ⚡  Generator (legacy): http://localhost:${PORT}/generator.html`);
-  console.log(`   Gemini (UI/UX):  ${process.env.GEMINI_API_KEY ? '✅ active' : '⚠️  not configured'}`);
-  console.log(`   Claude (Backend): Sonnet 4.6\n`);
-});
+// Local development: start the server directly
+// Vercel: imports this file as a module, skips listen, uses module.exports = app
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n✅  Server running at http://localhost:${PORT}`);
+    console.log(`   🚀  Webeneering      : http://localhost:${PORT}/webeneering.html`);
+    console.log(`   🏗️  Builder (legacy) : http://localhost:${PORT}/builder.html`);
+    console.log(`   ⚡  Generator (legacy): http://localhost:${PORT}/generator.html`);
+    console.log(`   Gemini (UI/UX):  ${process.env.GEMINI_API_KEY ? '✅ active' : '⚠️  not configured'}`);
+    console.log(`   Claude (Backend): Haiku 4.5\n`);
+  });
+}
+
+module.exports = app;
