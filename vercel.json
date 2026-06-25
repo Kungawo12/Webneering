@@ -1,5 +1,15 @@
 {
   "version": 2,
-  "builds": [{ "src": "server.js", "use": "@vercel/node" }],
-  "routes": [{ "src": "/(.*)", "dest": "server.js" }]
+  "builds": [
+    { "src": "server.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/build",            "dest": "server.js" },
+    { "src": "/build-project",    "dest": "server.js" },
+    { "src": "/create",           "dest": "server.js" },
+    { "src": "/download",         "dest": "server.js" },
+    { "src": "/generate",         "dest": "server.js" },
+    { "src": "/generate-graphic", "dest": "server.js" },
+    { "src": "/(.*)",             "dest": "/$1"       }
+  ]
 }

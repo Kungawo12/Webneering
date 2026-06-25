@@ -5,16 +5,22 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const archiver = require('archiver');
 const path = require('path');
 const fs = require('fs');
+const { compress: hrCompress } = require('headroom-ai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Headroom: set HEADROOM_BASE_URL (local proxy) or HEADROOM_API_KEY (cloud)
+// Without one of these, compress() returns text uncompressed (safe no-op).
+const HEADROOM_URL     = process.env.HEADROOM_BASE_URL || 'http://localhost:8787';
+const HEADROOM_ENABLED = !!(process.env.HEADROOM_BASE_URL || process.env.HEADROOM_API_KEY);
 
 if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'your-api-key-here') {
   console.error('\n❌  No Anthropic API key found.\n');
   if (require.main === module) process.exit(1);
 }
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || 'missing' });
 const gemini    = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 app.use(express.json({ limit: '2mb' }));
@@ -139,8 +145,17 @@ app.post('/create', async (req, res) => {
       ? cachedDesignSpec
       : await callGeminiDesigner(websiteType, description, features);
 
+    // Compress accumulated improvements once they grow past 2 entries
+    let effectiveImprovements = improvements;
+    if (improvements.length > 2) {
+      const { text: compressed } = await headroomCompress(
+        improvements.join('\n---\n'), 'improvements→Gemini'
+      );
+      effectiveImprovements = [compressed];
+    }
+
     // Generate frontend first so Claude can see which API routes it calls
-    const frontendHtml = await callGeminiFrontend(title, description, websiteType, features, improvements, designSpec);
+    const frontendHtml = await callGeminiFrontend(title, description, websiteType, features, effectiveImprovements, designSpec);
     const backendJs = await generateBackendCode(description, websiteType, frontendHtml);
 
     if (!frontendHtml.includes('<!DOCTYPE') && !frontendHtml.includes('<html'))
@@ -294,6 +309,39 @@ async function callGeminiFrontend(title, description, websiteType, features, imp
   return clean(result.response.text().trim());
 }
 
+// ── Headroom compression helper ──────────────────────────────────────────────
+// Compresses a plain-text string before it reaches a model.
+// Returns { text: string, tokensSaved: number }.
+// Falls back to the original text if Headroom is unconfigured or the proxy is down.
+// CCR is disabled: user-generated code is never written to disk by Headroom.
+async function headroomCompress(text, label) {
+  if (!HEADROOM_ENABLED) return { text, tokensSaved: 0 };
+  try {
+    const result = await hrCompress(
+      [{ role: 'user', content: text }],
+      {
+        model: 'claude-haiku-4-5-20251001',
+        baseUrl: HEADROOM_URL,
+        fallback: true,
+        config: { ccr: { enabled: false } }, // ← prevents user code being cached to disk
+      }
+    );
+    const compressed = typeof result.messages?.[0]?.content === 'string'
+      ? result.messages[0].content
+      : text;
+    const saved  = result.tokensSaved    || 0;
+    const ratio  = result.compressionRatio;
+    if (saved > 0) {
+      const pct = ratio != null ? ((1 - ratio) * 100).toFixed(0) : '?';
+      console.log(`🗜  Headroom [${label}]: ${saved} tokens saved (${pct}% reduction)`);
+    }
+    return { text: compressed, tokensSaved: saved };
+  } catch (err) {
+    console.warn(`⚠️  Headroom unavailable [${label}]: ${err.message?.split('\n')[0]}`);
+    return { text, tokensSaved: 0 };
+  }
+}
+
 async function generateBackendCode(description, websiteType, frontendHtml) {
   const systemPrompt = `You are a senior Node.js/Express.js backend engineer. Generate complete, immediately-runnable backend servers. Output raw JavaScript only — no markdown, no code fences, no explanations.
 
@@ -358,11 +406,15 @@ PROHIBITIONS:
 - No TODO comments or unimplemented stubs
 - Output starts with require('dotenv').config() — nothing before it`;
 
+  // Build prompt first (URL extraction from HTML happens here), then compress
+  const fullUserPrompt = buildFunctionalBackendPrompt(description, websiteType, frontendHtml);
+  const { text: userPrompt } = await headroomCompress(fullUserPrompt, 'HTML→Claude');
+
   const msg = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 4000,
     system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
-    messages: [{ role: 'user', content: buildFunctionalBackendPrompt(description, websiteType, frontendHtml) }],
+    messages: [{ role: 'user', content: userPrompt }],
   });
   console.log('✅ Claude Haiku backend generated');
   return clean(msg.content[0]?.text || '');
