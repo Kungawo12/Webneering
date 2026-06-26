@@ -775,6 +775,12 @@ if (localStorage.getItem('wbn-seen')) {
   document.getElementById('introOverlay').classList.add('hidden');
 }
 
+// If this page loads inside an iframe (e.g. from a generated site navigating to /),
+// hide the overlay immediately so it doesn't look like the app restarted.
+if (window.self !== window.top) {
+  document.getElementById('introOverlay').classList.add('hidden');
+}
+
 // ── Example prefill ───────────────────────────────────────────────────────────
 
 </script>
