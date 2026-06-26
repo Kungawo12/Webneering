@@ -212,46 +212,90 @@ iframe{width:100%;height:100%;border:none;background:#fff}
 /* ── LANDING OVERLAY ── */
 .intro-overlay{
   position:fixed;inset:0;z-index:100;
-  background:var(--bg);
+  background:#060606;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:40px 24px;overflow-y:auto;
-  transition:opacity .35s,transform .35s;
+  transition:opacity .4s,transform .4s;
 }
-.intro-overlay.hidden{opacity:0;pointer-events:none;transform:scale(1.02)}
-.intro-inner{display:flex;flex-direction:column;align-items:center;gap:0;max-width:680px;width:100%;text-align:center}
-.intro-wordmark{
-  font-family:'Space Grotesk',system-ui,sans-serif;font-weight:800;font-size:13px;
-  letter-spacing:.12em;text-transform:uppercase;color:var(--fg3);margin-bottom:32px;
+.intro-overlay::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:800px;height:400px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(99,102,241,.18) 0%,rgba(167,139,250,.08) 40%,transparent 70%);
+  pointer-events:none;filter:blur(1px);
+}
+.intro-overlay.hidden{opacity:0;pointer-events:none;transform:scale(1.015)}
+.intro-inner{
+  display:flex;flex-direction:column;align-items:center;
+  max-width:780px;width:100%;text-align:center;position:relative;z-index:1;
+}
+.intro-eyebrow{
+  display:flex;align-items:center;gap:10px;
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--fg4);margin-bottom:28px;
+}
+.intro-eyebrow::before,.intro-eyebrow::after{
+  content:'';flex:1;max-width:48px;height:1px;background:var(--border2);
 }
 .intro-headline{
   font-family:'Space Grotesk',system-ui,sans-serif;font-weight:800;
-  font-size:clamp(32px,5vw,52px);letter-spacing:-.03em;line-height:1.08;
-  color:var(--fg);margin-bottom:16px;
+  font-size:clamp(38px,6vw,68px);letter-spacing:-.04em;line-height:1.04;
+  color:var(--fg);margin-bottom:20px;
 }
-.intro-headline em{font-style:normal;color:var(--fg3)}
-.intro-sub{font-size:15px;color:var(--fg3);line-height:1.65;max-width:480px;margin:0 auto 32px}
-.intro-agents{display:flex;gap:10px;justify-content:center;margin-bottom:40px}
-.intro-agent{
-  display:flex;align-items:center;gap:8px;
-  padding:10px 16px;border-radius:var(--r-lg);border:1px solid var(--border);
-  background:var(--surface);
+.intro-headline .grad{
+  background:linear-gradient(135deg,#818cf8 0%,#c084fc 50%,#60a5fa 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
-.intro-agent-dot{width:6px;height:6px;border-radius:var(--r-full)}
-.intro-agent-dot.g{background:#60a5fa}
-.intro-agent-dot.c{background:#a78bfa}
-.intro-agent-label{font-size:12px;font-weight:600;color:var(--fg2)}
-.intro-agent-desc{font-size:11px;color:var(--fg4);margin-top:1px}
-.intro-agent-inner{display:flex;flex-direction:column;text-align:left}
+.intro-sub{
+  font-size:16px;color:var(--fg3);line-height:1.7;
+  max-width:520px;margin:0 auto 44px;
+}
+/* Pipeline steps */
+.intro-pipeline{
+  display:flex;align-items:stretch;gap:0;
+  margin-bottom:48px;width:100%;max-width:700px;
+}
+.pipe-step{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:18px 10px;border-radius:var(--r-lg);
+  border:1px solid var(--border);background:rgba(255,255,255,.02);
+}
+.pipe-step.ps-gemini{border-color:rgba(96,165,250,.2);background:rgba(96,165,250,.04)}
+.pipe-step.ps-haiku{border-color:rgba(167,139,250,.2);background:rgba(167,139,250,.04)}
+.pipe-step.ps-out{border-color:rgba(74,222,128,.18);background:rgba(74,222,128,.03)}
+.pipe-icon{
+  width:34px;height:34px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Space Grotesk',system-ui,sans-serif;font-weight:800;font-size:14px;
+}
+.pipe-step:first-child .pipe-icon{background:rgba(255,255,255,.06);color:var(--fg2)}
+.pipe-step.ps-gemini .pipe-icon{background:rgba(96,165,250,.15);color:#60a5fa}
+.pipe-step.ps-haiku .pipe-icon{background:rgba(167,139,250,.15);color:#a78bfa}
+.pipe-step.ps-out .pipe-icon{background:rgba(74,222,128,.12);color:#4ADE80}
+.pipe-label{font-size:11px;font-weight:700;color:var(--fg2);letter-spacing:.01em}
+.pipe-desc{font-size:10px;color:var(--fg4);line-height:1.4;text-align:center}
+.pipe-arrow{
+  flex-shrink:0;width:24px;display:flex;align-items:center;justify-content:center;
+  color:var(--fg4);font-size:12px;align-self:center;
+}
+/* CTA */
 .intro-cta{
-  padding:14px 36px;border-radius:var(--r-lg);border:none;cursor:pointer;
+  padding:17px 48px;border-radius:var(--r-lg);border:none;cursor:pointer;
   background:var(--fg);color:var(--bg);
-  font-family:'Space Grotesk',system-ui,sans-serif;font-size:15px;font-weight:700;
+  font-family:'Space Grotesk',system-ui,sans-serif;font-size:16px;font-weight:700;
   letter-spacing:-.01em;
-  transition:opacity .15s,transform .1s;margin-bottom:16px;
+  box-shadow:0 0 60px rgba(255,255,255,.1),0 1px 0 rgba(255,255,255,.9) inset;
+  transition:opacity .15s,transform .12s;margin-bottom:20px;
 }
-.intro-cta:hover{opacity:.88}
+.intro-cta:hover{opacity:.9;transform:translateY(-1px)}
 .intro-cta:active{transform:scale(.97)}
-.intro-note{font-size:11px;color:var(--fg4);letter-spacing:.02em}
+.intro-trust{
+  display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center;
+}
+.trust-item{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;color:var(--fg4);letter-spacing:.02em;
+}
+.trust-dot{width:4px;height:4px;border-radius:50%;background:rgba(74,222,128,.5)}
 .label-opt{color:var(--fg4);font-weight:400;text-transform:none;letter-spacing:0}
 #chatSection{display:none}
 #btnDownload{display:none}
@@ -332,30 +376,55 @@ iframe{width:100%;height:100%;border:none;background:#fff}
 </head>
 <body>
 
-<!-- ── LANDING INTRO OVERLAY ── -->
+<!-- ── LANDING OVERLAY ── -->
 <div class="intro-overlay" id="introOverlay">
   <div class="intro-inner">
-    <div class="intro-wordmark">Webeneering · by House of UGC</div>
-    <h1 class="intro-headline">Two agents.<br><em>One complete website.</em></h1>
-    <p class="intro-sub">Describe your idea. Gemini designs the frontend, Claude engineers the backend. Download a production-ready project you can deploy anywhere in minutes.</p>
-    <div class="intro-agents">
-      <div class="intro-agent">
-        <div class="intro-agent-dot g"></div>
-        <div class="intro-agent-inner">
-          <span class="intro-agent-label">Gemini · UI/UX + Frontend</span>
-          <span class="intro-agent-desc">Color system, layout, Tailwind HTML</span>
-        </div>
+
+    <div class="intro-eyebrow">Webeneering &nbsp;·&nbsp; by House of UGC</div>
+
+    <h1 class="intro-headline">
+      Your idea becomes a<br><span class="grad">real website</span> in minutes.
+    </h1>
+
+    <p class="intro-sub">
+      Describe what you want to build in plain language.
+      Two AI agents handle everything — you get a complete, deployable project.
+    </p>
+
+    <div class="intro-pipeline">
+      <div class="pipe-step">
+        <div class="pipe-icon">01</div>
+        <div class="pipe-label">You describe it</div>
+        <div class="pipe-desc">Any idea, plain language</div>
       </div>
-      <div class="intro-agent">
-        <div class="intro-agent-dot c"></div>
-        <div class="intro-agent-inner">
-          <span class="intro-agent-label">Claude · Backend Engineer</span>
-          <span class="intro-agent-desc">Express.js API, routes, data layer</span>
-        </div>
+      <div class="pipe-arrow">&#8594;</div>
+      <div class="pipe-step ps-gemini">
+        <div class="pipe-icon">G</div>
+        <div class="pipe-label">Gemini designs</div>
+        <div class="pipe-desc">UI, layout, full HTML</div>
+      </div>
+      <div class="pipe-arrow">&#8594;</div>
+      <div class="pipe-step ps-haiku">
+        <div class="pipe-icon">C</div>
+        <div class="pipe-label">Claude engineers</div>
+        <div class="pipe-desc">Express API &amp; routes</div>
+      </div>
+      <div class="pipe-arrow">&#8594;</div>
+      <div class="pipe-step ps-out">
+        <div class="pipe-icon">&#8595;</div>
+        <div class="pipe-label">You download</div>
+        <div class="pipe-desc">Deploy-ready ZIP</div>
       </div>
     </div>
-    <button type="button" class="intro-cta" onclick="startBuilding()">Start Building &rarr;</button>
-    <p class="intro-note">Free to use &nbsp;&middot;&nbsp; No account required &nbsp;&middot;&nbsp; You own the code</p>
+
+    <button type="button" class="intro-cta" onclick="startBuilding()">Start Building &mdash; It&rsquo;s Free</button>
+
+    <div class="intro-trust">
+      <div class="trust-item"><div class="trust-dot"></div>No account needed</div>
+      <div class="trust-item"><div class="trust-dot"></div>You own the code</div>
+      <div class="trust-item"><div class="trust-dot"></div>Download the ZIP</div>
+    </div>
+
   </div>
 </div>
 
@@ -610,7 +679,8 @@ async function generate(extra) {
   } catch (err) {
     clearProgress();
     setLoadingState(false);
-    addChatMessage('ai', '⚠ ' + (err.message || 'Something went wrong. Please try again.'));
+    document.getElementById('chatSection').style.display = 'block';
+    addChatMessage('ai', 'Something went wrong: ' + (err.message || 'Please try again.'));
   } finally {
     state.generating = false;
     document.getElementById('btnGenerate').disabled = false;

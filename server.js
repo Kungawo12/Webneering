@@ -303,7 +303,7 @@ async function callGeminiFrontend(title, description, websiteType, features, imp
       break;
     } catch (e) {
       lastErr = e;
-      if (!e.message?.includes('429') && !e.message?.includes('quota') && !e.message?.includes('503')) throw e;
+      console.warn(`⚠️  Gemini ${modelName} failed: ${e.message?.slice(0, 120)}`);
     }
   }
   if (!result) throw lastErr;
@@ -324,7 +324,8 @@ async function headroomCompress(text, label) {
         model: 'claude-haiku-4-5-20251001',
         baseUrl: HEADROOM_URL,
         fallback: true,
-        config: { ccr: { enabled: false } }, // ← prevents user code being cached to disk
+        timeout: 6000,
+        config: { ccr: { enabled: false } },
       }
     );
     const compressed = typeof result.messages?.[0]?.content === 'string'
