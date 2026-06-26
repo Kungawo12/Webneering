@@ -329,7 +329,7 @@ async function callGeminiSvgAsset(title, description, websiteType, designSpec) {
   const secondary = designSpec?.palette?.secondary || '#ec4899';
   const mood      = designSpec?.mood               || 'professional and modern';
 
-  const prompt = `Create a hero SVG illustration for: "${title}" — ${description}
+  const rawSvgPrompt = `Create a hero SVG illustration for: "${title}" — ${description}
 Business type: ${websiteType}. Visual mood: ${mood}
 Brand colors: primary=${primary}, secondary=${secondary}
 
@@ -350,6 +350,8 @@ REQUIREMENTS:
 • Subtle drop shadows (<filter>) for depth
 • No text inside the SVG
 • Output ONLY the raw <svg...></svg>. No markdown, no explanation.`;
+
+  const { text: prompt } = await headroomCompress(rawSvgPrompt, 'prompt→Gemini-svg');
 
   const MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
   let result, lastErr;
@@ -374,7 +376,7 @@ async function callGeminiAnimations(websiteType, designSpec) {
   const animStyle = designSpec?.animationStyle || 'smooth fade-up with stagger';
   const primary   = designSpec?.palette?.primary || '#7c3aed';
 
-  const prompt = `You are an expert web animation engineer. Generate production-quality animation JavaScript for a ${websiteType} website.
+  const rawAnimPrompt = `You are an expert web animation engineer. Generate production-quality animation JavaScript for a ${websiteType} website.
 
 Animation style: ${animStyle}
 Brand primary color: ${primary}
@@ -411,11 +413,13 @@ Animate number from 0 to target using GSAP when scrolled into view.
 
 Output raw JS only. No markdown.`;
 
+  const { text: animPrompt } = await headroomCompress(rawAnimPrompt, 'prompt→Gemini-anim');
+
   const MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
   let result, lastErr;
   for (const modelName of MODELS) {
     try {
-      result = await gemini.getGenerativeModel({ model: modelName }).generateContent(prompt);
+      result = await gemini.getGenerativeModel({ model: modelName }).generateContent(animPrompt);
       console.log(`✅ Gemini animations generated (${modelName})`);
       break;
     } catch (e) {
@@ -508,6 +512,9 @@ async function callSonnetFixer(brokenHtml, issues, title, description, websiteTy
   const bg   = designSpec?.palette?.background || '#ffffff';
   const font = designSpec?.typography?.heading  || 'Inter';
 
+  // Compress the broken HTML before sending — saves significant tokens when HTML is large
+  const { text: compressedHtml } = await headroomCompress(brokenHtml, 'brokenHTML→Sonnet-QA');
+
   const msg = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 8000,
@@ -522,7 +529,7 @@ ISSUES TO FIX:
 ${issues.map(i => `• ${i}`).join('\n')}
 
 BROKEN HTML:
-${brokenHtml.slice(0, 6000)}
+${compressedHtml}
 
 Return the complete, corrected HTML from <!DOCTYPE html> to </html>. Fix all listed issues. No markdown, no code fences, no explanation.`,
     }],
