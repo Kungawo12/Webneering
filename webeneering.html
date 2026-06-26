@@ -385,7 +385,7 @@ iframe{width:100%;height:100%;border:none;background:#fff}
 .label-opt{color:var(--fg4);font-weight:400;text-transform:none;letter-spacing:0}
 #chatSection{display:none}
 #btnDownload{display:none}
-#previewFrame{display:none}
+#previewFrame{display:none;width:100%;height:100%;border:none}
 
 /* ── EMPTY STATE ── */
 .empty-state{
@@ -791,12 +791,16 @@ function renderPreview(html) {
   document.getElementById('emptyState').style.display = 'none';
   frame.style.display = 'block';
 
-  // Force all links in generated site to open in new tab — prevents iframe navigation to /
-  const safe = html.includes('<base ')
-    ? html
-    : html.replace(/<head([^>]*)>/i, '<head$1><base target="_blank">');
-  frame.srcdoc = safe;
+  // Strip any <base> tags — in srcdoc context they resolve relative URLs against
+  // the parent page URL, causing anchor links (#section) to open Webeneering in a new tab
+  let safe = html.replace(/<base\b[^>]*>/gi, '');
 
+  // Inject click interceptor: #anchor links scroll normally inside the iframe;
+  // external URLs open in a new tab without navigating the preview away
+  const interceptor = `<script>document.addEventListener('click',function(e){var a=e.target.closest('a');if(!a)return;var h=a.getAttribute('href')||'';if(!h||h.startsWith('#'))return;e.preventDefault();if(/^https?:\/\/|^\/\//.test(h))window.open(h,'_blank');});<\/script>`;
+  safe = /<\/body>/i.test(safe) ? safe.replace(/<\/body>/i, interceptor + '</body>') : safe + interceptor;
+
+  frame.srcdoc = safe;
   const title = document.getElementById('title').value.trim() || 'preview';
   document.getElementById('previewLabel').textContent = title.toLowerCase();
 }
@@ -807,11 +811,10 @@ function refreshPreview() {
 
 function openInTab() {
   if (!state.currentHtml) return;
-  // Add base target so nav links inside the site don't navigate away to the Webeneering app
-  const safe = state.currentHtml.includes('<base ')
-    ? state.currentHtml
-    : state.currentHtml.replace(/<head([^>]*)>/i, '<head$1><base target="_blank">');
-  const blob = new Blob([safe], { type: 'text/html' });
+  // For blob URL context, <base target="_blank"> works correctly (resolves against blob URL)
+  let out = state.currentHtml.replace(/<base\b[^>]*>/gi, '');
+  out = out.replace(/<head([^>]*)>/i, '<head$1><base target="_blank">');
+  const blob = new Blob([out], { type: 'text/html' });
   window.open(URL.createObjectURL(blob), '_blank');
 }
 
