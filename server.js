@@ -145,8 +145,11 @@ app.post('/create', async (req, res) => {
       ? cachedDesignSpec
       : await callGeminiDesigner(websiteType, description, features);
 
-    // Agent 1b — Gemini: hero SVG illustration
-    const heroSvg = await callGeminiSvgAsset(title, description, websiteType, designSpec);
+    // Agent 1b — Gemini: hero SVG + animation JS (parallel, both need designSpec)
+    const [heroSvg, animationJs] = await Promise.all([
+      callGeminiSvgAsset(title, description, websiteType, designSpec),
+      callGeminiAnimations(websiteType, designSpec),
+    ]);
 
     // Compress accumulated improvements
     let effectiveImprovements = improvements;
@@ -155,8 +158,8 @@ app.post('/create', async (req, res) => {
       effectiveImprovements = [compressed];
     }
 
-    // Agent 2 — Claude Sonnet: full frontend with Lenis + GSAP animations
-    let frontendHtml = await callClaudeFrontend(title, description, websiteType, features, effectiveImprovements, designSpec, heroSvg);
+    // Agent 2 — Claude Haiku: HTML structure (Gemini's design + animation embedded)
+    let frontendHtml = await callClaudeFrontend(title, description, websiteType, features, effectiveImprovements, designSpec, heroSvg, animationJs);
 
     // Agent 2b — Claude Sonnet (QA): validate output; fix silently if issues found
     const htmlIssues = validateHtml(frontendHtml, websiteType);
@@ -365,17 +368,76 @@ REQUIREMENTS:
   return text.includes('<svg') ? text : '';
 }
 
-// ── Claude Sonnet Frontend Agent ──────────────────────────────────────────────
-async function callClaudeFrontend(title, description, websiteType, features, improvements, designSpec, heroSvg) {
-  const rawPrompt = buildClaudeFrontendPrompt(title, description, websiteType, features, improvements, designSpec, heroSvg);
+// ── Gemini Animation Agent ────────────────────────────────────────────────────
+async function callGeminiAnimations(websiteType, designSpec) {
+  if (!process.env.GEMINI_API_KEY) return '';
+  const animStyle = designSpec?.animationStyle || 'smooth fade-up with stagger';
+  const primary   = designSpec?.palette?.primary || '#7c3aed';
+
+  const prompt = `You are an expert web animation engineer. Generate production-quality animation JavaScript for a ${websiteType} website.
+
+Animation style: ${animStyle}
+Brand primary color: ${primary}
+
+Output ONLY the raw JavaScript (no <script> tags, no markdown). Generate:
+
+1. LENIS SMOOTH SCROLL INIT:
+gsap.registerPlugin(ScrollTrigger);
+const lenis = new Lenis();
+lenis.on('scroll', ScrollTrigger.update);
+gsap.ticker.add(time => lenis.raf(time * 1000));
+gsap.ticker.lagSmoothing(0);
+
+2. HERO ENTRANCE (GSAP timeline on DOMContentLoaded):
+Elements to animate: .hero-title, .hero-sub, .hero-cta, .hero-visual
+Use staggered fromTo with opacity 0→1 and y 40→0. Easing: power3.out for title, power2.out for rest.
+
+3. SCROLL REVEALS:
+gsap.utils.toArray('[data-animate]').forEach(el => {
+  gsap.fromTo(el, {opacity:0, y: +el.dataset.y||40}, {
+    opacity:1, y:0, duration:.7, ease:'power2.out',
+    delay: +el.dataset.delay||0,
+    scrollTrigger:{trigger:el, start:'top 88%', toggleActions:'play none none none'}
+  });
+});
+
+4. NAV SCROLL BEHAVIOUR:
+ScrollTrigger.create({start:'top -60', onUpdate:s=>document.querySelector('nav')?.classList.toggle('nav-scrolled',s.isActive)});
+
+5. STAT COUNTERS (if .stat-number elements exist):
+Animate number from 0 to target using GSAP when scrolled into view.
+
+6. Based on the animation style "${animStyle}", add 1-2 additional fitting effects (e.g. parallax on hero bg, clip-path reveal on sections, scale entrance on cards).
+
+Output raw JS only. No markdown.`;
+
+  const MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+  let result, lastErr;
+  for (const modelName of MODELS) {
+    try {
+      result = await gemini.getGenerativeModel({ model: modelName }).generateContent(prompt);
+      console.log(`✅ Gemini animations generated (${modelName})`);
+      break;
+    } catch (e) {
+      lastErr = e;
+      console.warn(`⚠️  Gemini animations ${modelName}: ${e.message?.slice(0, 80)}`);
+    }
+  }
+  if (!result) return '';
+  return clean(result.response.text().trim());
+}
+
+// ── Claude Haiku Frontend Agent ───────────────────────────────────────────────
+async function callClaudeFrontend(title, description, websiteType, features, improvements, designSpec, heroSvg, animationJs) {
+  const rawPrompt = buildClaudeFrontendPrompt(title, description, websiteType, features, improvements, designSpec, heroSvg, animationJs);
   const { text: prompt } = await headroomCompress(rawPrompt, 'prompt→Claude-frontend');
 
   const msg = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 8000,
     messages: [{ role: 'user', content: prompt }],
   });
-  console.log('✅ Claude Sonnet frontend generated');
+  console.log('✅ Claude Haiku frontend coded');
   return clean(msg.content[0]?.text || '');
 }
 
@@ -665,7 +727,7 @@ CODING RULES (must follow):
 Output ONLY the raw HTML from <!DOCTYPE html> to </html>. No markdown. No code fences. No explanation.`;
 }
 
-function buildClaudeFrontendPrompt(title, description, websiteType, features, improvements, designSpec, heroSvg) {
+function buildClaudeFrontendPrompt(title, description, websiteType, features, improvements, designSpec, heroSvg, animationJs) {
   const p       = designSpec?.palette?.primary    || '#7c3aed';
   const sec     = designSpec?.palette?.secondary  || '#db2777';
   const accent  = designSpec?.palette?.accent     || p;
@@ -707,10 +769,14 @@ function buildClaudeFrontendPrompt(title, description, websiteType, features, im
   }[websiteType] || 'Nav, Hero(two-col), Features, ContactForm, Footer';
 
   const heroBlock = heroSvg
-    ? `\nGEMINI HERO SVG — embed this EXACTLY as-is inside the hero right column:\n${heroSvg}\n`
+    ? `\nGEMINI HERO SVG — embed this EXACTLY inside .hero-visual div:\n${heroSvg}\n`
     : '';
 
-  return `You are an expert frontend engineer. Build a production-quality ${websiteType} website with premium scroll animations.
+  const animBlock = animationJs
+    ? `\nGEMINI ANIMATION JS — embed this EXACTLY just before </body> in a <script> tag:\n${animationJs}\n`
+    : '';
+
+  return `You are a senior frontend engineer. Build the HTML structure for a ${websiteType} website. Gemini has already created the design system, hero illustration, and animation code — your job is to write clean, semantic HTML that correctly uses them.
 
 PROJECT: ${title}
 BRIEF: ${description}
@@ -720,10 +786,9 @@ FEATURES: ${features || 'standard for this site type'}${improvementText}
 Theme: ${theme} | Mood: ${mood}
 Primary: ${p} | Secondary: ${sec} | Accent: ${accent}
 Background: ${bg} | Surface: ${surf} | Text: ${textCol}
-Heading font: ${font} | Body font: ${bodyFnt} | Border radius: ${br}
+Heading: ${font} | Body: ${bodyFnt} | Border radius: ${br}
 Hero layout: ${heroStyle}
-Animation personality: ${animStyle}
-${heroBlock}
+${heroBlock}${animBlock}
 ═══ SECTIONS (in order) ═══
 ${sectionMap}
 
@@ -736,60 +801,36 @@ ${sectionMap}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <style>
-@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 :root{--brand:${p};--sec:${sec};--bg:${bg};--surf:${surf};--text:${textCol};--radius:${br}}
+nav.nav-scrolled{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,0,0,.08);box-shadow:0 1px 12px rgba(0,0,0,.06)}
 </style>
 
-═══ ANIMATION SYSTEM (add just before </body>) ═══
-<script>
-gsap.registerPlugin(ScrollTrigger);
-const lenis = new Lenis();
-lenis.on('scroll', ScrollTrigger.update);
-gsap.ticker.add(time => lenis.raf(time * 1000));
-gsap.ticker.lagSmoothing(0);
+═══ HTML RULES ═══
+• Tailwind utility classes for all layout/spacing/color — no custom CSS except :root vars above
+• MUST use these class names for Gemini's animation to work:
+  - .hero-title on the main headline
+  - .hero-sub on the subtitle/description
+  - .hero-cta on the primary CTA button
+  - .hero-visual on the div wrapping the hero SVG
+  - data-animate on every card, section heading, and feature item (Gemini animates these on scroll)
+  - data-delay="0.1" (increment by 0.1 per item in a row for stagger)
+  - .stat-number on any animated counter numbers
+• Nav: logo left, links right; hamburger for mobile (toggle hidden class); uses <nav> tag
+• Hero: two columns — left: .hero-title, .hero-sub, .hero-cta; right: .hero-visual with the Gemini SVG
+• Heading size: text-5xl md:text-7xl font-black tracking-tighter
+• CTA: px-8 py-4 rounded-full font-bold text-white inline-block hover:opacity-90 transition-all
+• Cards: bg-white/bg-surface rounded-2xl border shadow-sm hover:shadow-xl transition-all
+• Forms: e.preventDefault() → disable btn → fetch() POST → show ✅ success or ❌ error inline
+• GET data grids: DOMContentLoaded → fetch → render; show skeleton pulse div first
+• Footer: dark or brand bg, link columns, copyright
+• Compact markup — no HTML comments
+• Embed Gemini animation JS exactly as given, just before </body>
 
-// Hero entrance (runs immediately on load)
-gsap.timeline()
-  .fromTo('.hero-title',  {opacity:0,y:40},{opacity:1,y:0,duration:.9,ease:'power3.out'})
-  .fromTo('.hero-sub',    {opacity:0,y:24},{opacity:1,y:0,duration:.7,ease:'power2.out'},'-=.5')
-  .fromTo('.hero-cta',    {opacity:0,y:16},{opacity:1,y:0,duration:.5,ease:'power2.out'},'-=.4')
-  .fromTo('.hero-visual', {opacity:0,scale:.92},{opacity:1,scale:1,duration:1,ease:'power2.out'},'-=.6');
+═══ API ═══
+${apiRoutes}
 
-// Scroll reveals — add data-animate to any element
-gsap.utils.toArray('[data-animate]').forEach(el => {
-  gsap.fromTo(el,
-    {opacity:0, y:Number(el.dataset.y||40)},
-    {opacity:1, y:0, duration:.7, ease:'power2.out',
-     delay: Number(el.dataset.delay||0),
-     scrollTrigger:{trigger:el, start:'top 88%', toggleActions:'play none none none'}
-    }
-  );
-});
-
-// Nav scroll behaviour
-const nav = document.querySelector('nav');
-ScrollTrigger.create({
-  start:'top -60',
-  onUpdate:({isActive})=>nav.classList.toggle('nav-scrolled',isActive)
-});
-</script>
-
-═══ CODING RULES ═══
-• Tailwind for layout/spacing; <style> block only for custom vars and keyframe animations
-• Nav: logo left, links right, hamburger mobile; add class "nav-scrolled" style: backdrop-blur + border + shadow on scroll
-• Hero: two columns (left: text, right: hero SVG if provided); heading uses .hero-title, subtitle .hero-sub, CTA .hero-cta, SVG wrapper .hero-visual
-• Heading: text-5xl md:text-7xl font-black tracking-tighter leading-none (Space Grotesk / ${font})
-• CTA button: px-8 py-4 rounded-full font-bold text-white, background brand color, hover:opacity-90 hover:-translate-y-0.5 transition-all
-• Cards: bg-surface rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all; add data-animate data-delay="0.1" etc.
-• Section headings: add data-animate to animate in on scroll
-• Skeleton loaders: animated pulse while fetch is in progress (before data arrives)
-• Forms: e.preventDefault() → disable btn → fetch() POST → show ✅ success or ❌ error inline (never alert())
-• GET data: DOMContentLoaded → fetch → render list/grid; show "Loading…" skeleton first
-• Footer: dark bg or brand bg; organized link columns; copyright line
-• Stat counters (if present): GSAP counter animation triggered by ScrollTrigger
-• NO HTML comments; compact markup
-
-Output ONLY raw HTML from <!DOCTYPE html> to </html>. No markdown. No code fences. No explanation.`;
+Output ONLY raw HTML from <!DOCTYPE html> to </html>. No markdown. No code fences.`;
 }
 
 function buildConversationalPrompt(description, websiteType, improvements, designSpec) {
