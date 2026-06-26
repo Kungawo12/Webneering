@@ -156,7 +156,13 @@ app.post('/create', async (req, res) => {
     }
 
     // Agent 2 — Claude Sonnet: full frontend with Lenis + GSAP animations
-    const frontendHtml = await callClaudeFrontend(title, description, websiteType, features, effectiveImprovements, designSpec, heroSvg);
+    let frontendHtml = await callClaudeFrontend(title, description, websiteType, features, effectiveImprovements, designSpec, heroSvg);
+
+    // Agent 2b — Claude Sonnet (QA): validate output; fix silently if issues found
+    const htmlIssues = validateHtml(frontendHtml, websiteType);
+    if (htmlIssues.length > 0) {
+      frontendHtml = await callSonnetFixer(frontendHtml, htmlIssues, title, description, websiteType, designSpec);
+    }
 
     // Agent 3 — Claude Haiku: Express backend
     const backendJs = await generateBackendCode(description, websiteType, frontendHtml);
@@ -405,6 +411,63 @@ async function headroomCompress(text, label) {
     console.warn(`⚠️  Headroom unavailable [${label}]: ${err.message?.split('\n')[0]}`);
     return { text, tokensSaved: 0 };
   }
+}
+
+// ── Claude Sonnet QA Agent ────────────────────────────────────────────────────
+function validateHtml(html, websiteType) {
+  const issues = [];
+  if (!html.includes('<!DOCTYPE') && !html.includes('<html'))
+    issues.push('Missing HTML document structure (<!DOCTYPE html> or <html> tag)');
+  if (html.length < 4000)
+    issues.push('Output is too short — likely truncated during generation');
+  if (!html.includes('</html>'))
+    issues.push('HTML cut off — closing </html> tag is missing');
+  if (!html.includes('<nav') && !html.includes('navbar'))
+    issues.push('Navigation section is missing');
+  if (!html.includes('<footer'))
+    issues.push('Footer section is missing');
+
+  const apiChecks = {
+    restaurant: { terms: ['api/menu', 'api/reserve'],  msg: 'Missing menu grid or reservation form' },
+    store:      { terms: ['api/products'],              msg: 'Missing product grid' },
+    portfolio:  { terms: ['api/projects'],              msg: 'Missing projects section' },
+    blog:       { terms: ['api/posts'],                 msg: 'Missing posts grid' },
+    booking:    { terms: ['api/book', 'api/slots'],     msg: 'Missing booking form or slots' },
+    saas:       { terms: ['waitlist', 'pricing'],       msg: 'Missing pricing or waitlist section' },
+  };
+  const check = apiChecks[websiteType];
+  if (check && !check.terms.some(t => html.includes(t))) issues.push(check.msg);
+
+  return issues;
+}
+
+async function callSonnetFixer(brokenHtml, issues, title, description, websiteType, designSpec) {
+  const p    = designSpec?.palette?.primary    || '#7c3aed';
+  const bg   = designSpec?.palette?.background || '#ffffff';
+  const font = designSpec?.typography?.heading  || 'Inter';
+
+  const msg = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 8000,
+    messages: [{
+      role: 'user',
+      content: `You are a senior frontend QA engineer. Fix every issue listed below in this partially broken website HTML.
+
+PROJECT: "${title}" — ${description} (${websiteType} site)
+DESIGN: primary=${p}, background=${bg}, heading font=${font}
+
+ISSUES TO FIX:
+${issues.map(i => `• ${i}`).join('\n')}
+
+BROKEN HTML:
+${brokenHtml.slice(0, 6000)}
+
+Return the complete, corrected HTML from <!DOCTYPE html> to </html>. Fix all listed issues. No markdown, no code fences, no explanation.`,
+    }],
+  });
+
+  console.log(`🔧 Sonnet QA fixed: ${issues.join(' | ')}`);
+  return clean(msg.content[0]?.text || brokenHtml);
 }
 
 async function generateBackendCode(description, websiteType, frontendHtml) {
