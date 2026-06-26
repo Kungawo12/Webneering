@@ -786,22 +786,92 @@ function addChatMessage(role, text) {
 }
 
 // ── Preview ───────────────────────────────────────────────────────────────────
+// Mock API data for preview — the backend isn't running in the iframe, so we
+// intercept fetch('/api/...') and return realistic sample data so everything works.
+function buildPreviewInjection(title) {
+  const t = (title || 'preview').replace(/'/g, "\\'");
+  return `<script>
+(function(){
+/* ── Mock fetch: intercept /api/* so preview works without a running backend ── */
+var _f=window.fetch;
+window.fetch=function(url,opts){
+  var u=typeof url==='string'?url.split('?')[0]:'';
+  if(!u.startsWith('/api/'))return _f.apply(this,arguments);
+  var method=(opts&&opts.method||'GET').toUpperCase();
+  if(method!=='GET'){
+    return Promise.resolve(new Response(JSON.stringify({success:true,message:'Your request was received — thank you!'}),{status:200,headers:{'Content-Type':'application/json'}}));
+  }
+  var mock={
+    '/api/menu':{items:[
+      {id:1,name:'${t} Special',description:'Our signature dish, crafted with care',price:'$24',category:'Mains',image:''},
+      {id:2,name:'Garden Starter',description:'Fresh seasonal vegetables with house dressing',price:'$12',category:'Starters',image:''},
+      {id:3,name:'Heritage Soup',description:'Slow-cooked broth with handmade noodles',price:'$10',category:'Soups',image:''},
+      {id:4,name:'Classic Main',description:'Traditional recipe with a modern twist',price:'$22',category:'Mains',image:''},
+      {id:5,name:'Sweet Finish',description:'Decadent dessert to end your meal',price:'$9',category:'Desserts',image:''},
+      {id:6,name:'House Drink',description:'Refreshing house-made specialty',price:'$7',category:'Drinks',image:''}
+    ]},
+    '/api/products':{products:[
+      {id:1,name:'Signature Item',description:'Our best-selling product',price:'$49',category:'Featured',stock:true},
+      {id:2,name:'Premium Bundle',description:'Everything you need in one package',price:'$89',category:'Bundles',stock:true},
+      {id:3,name:'New Arrival',description:'Just launched — limited availability',price:'$39',category:'New',stock:true},
+      {id:4,name:'Classic Pick',description:'A timeless favourite',price:'$34',category:'Classic',stock:true}
+    ]},
+    '/api/projects':{projects:[
+      {id:1,title:'Brand Identity',description:'Visual identity system for a growing startup',tags:['Design','Branding'],year:'2025'},
+      {id:2,title:'Web Platform',description:'Full-stack application with real-time features',tags:['React','Node.js'],year:'2025'},
+      {id:3,title:'Mobile App',description:'Cross-platform mobile experience',tags:['Flutter','Firebase'],year:'2024'},
+      {id:4,title:'Campaign',description:'Multi-channel marketing campaign',tags:['Strategy','Creative'],year:'2024'}
+    ]},
+    '/api/posts':{posts:[
+      {id:1,title:'Getting Started Guide',excerpt:'Everything you need to know to begin your journey',date:'June 2026',readTime:'5 min'},
+      {id:2,title:'Best Practices',excerpt:'What professionals do differently and why it matters',date:'May 2026',readTime:'8 min'},
+      {id:3,title:'Advanced Techniques',excerpt:'Level up with these proven strategies',date:'May 2026',readTime:'6 min'}
+    ]},
+    '/api/slots':{services:[
+      {id:1,name:'Consultation',description:'One-on-one session to discuss your needs',duration:'60 min',price:'$80'},
+      {id:2,name:'Standard Session',description:'Deep-dive work session with full support',duration:'2 hrs',price:'$150'},
+      {id:3,name:'Full Day Package',description:'Comprehensive service from start to finish',duration:'Full day',price:'$480'}
+    ]},
+    '/api/features':{features:[
+      {name:'Fast & Reliable',description:'Optimised for peak performance'},
+      {name:'Easy to Use',description:'Intuitive interface anyone can master'},
+      {name:'Secure',description:'Enterprise-grade protection built in'},
+      {name:'Scalable',description:'Grows seamlessly with your business'},
+      {name:'24/7 Support',description:'Always here when you need us'},
+      {name:'Analytics',description:'Real-time insights at a glance'}
+    ]}
+  };
+  var data=mock[u]||{data:[],message:'Preview ready'};
+  return Promise.resolve(new Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}}));
+};
+
+/* ── Link guard: #anchor → scroll in iframe; external → new tab; relative paths → blocked ── */
+document.addEventListener('click',function(e){
+  var a=e.target.closest('a');if(!a)return;
+  var h=a.getAttribute('href')||'';
+  if(!h||h==='#'||h.startsWith('#'))return;
+  e.preventDefault();
+  if(/^https?:\/\/|^\/\//.test(h))window.open(h,'_blank');
+});
+})();
+<\/script>`;
+}
+
 function renderPreview(html) {
   const frame = document.getElementById('previewFrame');
   document.getElementById('emptyState').style.display = 'none';
   frame.style.display = 'block';
 
-  // Strip any <base> tags — in srcdoc context they resolve relative URLs against
-  // the parent page URL, causing anchor links (#section) to open Webeneering in a new tab
+  const title = document.getElementById('title').value.trim() || 'preview';
+
+  // Strip any <base> tags — in srcdoc context they resolve URLs against the parent page
   let safe = html.replace(/<base\b[^>]*>/gi, '');
 
-  // Inject click interceptor: #anchor links scroll normally inside the iframe;
-  // external URLs open in a new tab without navigating the preview away
-  const interceptor = `<script>document.addEventListener('click',function(e){var a=e.target.closest('a');if(!a)return;var h=a.getAttribute('href')||'';if(!h||h.startsWith('#'))return;e.preventDefault();if(/^https?:\/\/|^\/\//.test(h))window.open(h,'_blank');});<\/script>`;
-  safe = /<\/body>/i.test(safe) ? safe.replace(/<\/body>/i, interceptor + '</body>') : safe + interceptor;
+  // Inject mock fetch + link guard right after <head> opens so it's live before any other script
+  const injection = buildPreviewInjection(title);
+  safe = safe.replace(/<head([^>]*)>/i, '<head$1>' + injection);
 
   frame.srcdoc = safe;
-  const title = document.getElementById('title').value.trim() || 'preview';
   document.getElementById('previewLabel').textContent = title.toLowerCase();
 }
 
