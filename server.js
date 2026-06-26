@@ -134,18 +134,32 @@ app.post('/build-project', async (req, res) => {
   }
 });
 
-// ── Webeneering unified create ───────────────────────────────────────────────
+// ── Webeneering unified create (SSE streaming) ──────────────────────────────
 app.post('/create', async (req, res) => {
   const { title, description, websiteType = 'business', features = '', improvements = [], iteration = 0, cachedDesignSpec = null } = req.body || {};
   if (!title || !description) return res.status(400).json({ error: 'title and description are required.' });
 
+  // SSE setup — keeps connection alive through the full AI pipeline
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  const send = (event) => {
+    try { res.write(`data: ${JSON.stringify(event)}\n\n`); } catch (_) {}
+  };
+
   try {
-    // Agent 1 — Gemini: design system (colors, fonts, mood, animation style)
+    // Step 1 — Gemini: design system
+    send({ step: 'design', status: 'active', label: 'Gemini designing...' });
     const designSpec = (iteration > 0 && cachedDesignSpec)
       ? cachedDesignSpec
       : await callGeminiDesigner(websiteType, description, features);
+    send({ step: 'design', status: 'done' });
 
-    // Agent 1b — Gemini: hero SVG + animation JS (parallel, both need designSpec)
+    // Step 1b — Gemini: hero SVG + animation JS in parallel
+    send({ step: 'frontend', status: 'active', label: 'Gemini creating visuals...' });
     const [heroSvg, animationJs] = await Promise.all([
       callGeminiSvgAsset(title, description, websiteType, designSpec),
       callGeminiAnimations(websiteType, designSpec),
@@ -158,20 +172,30 @@ app.post('/create', async (req, res) => {
       effectiveImprovements = [compressed];
     }
 
-    // Agent 2 — Claude Sonnet: HTML structure (Gemini's design + animation embedded)
+    // Step 2 — Claude Sonnet: full HTML
+    send({ step: 'frontend', status: 'active', label: 'Claude building frontend...' });
     let frontendHtml = await callClaudeFrontend(title, description, websiteType, features, effectiveImprovements, designSpec, heroSvg, animationJs);
 
-    // Agent 2b — Claude Sonnet (QA): validate output; fix silently if issues found
+    // Step 2b — Claude Sonnet (QA): fix if needed
     const htmlIssues = validateHtml(frontendHtml, websiteType);
     if (htmlIssues.length > 0) {
+      send({ step: 'frontend', status: 'active', label: 'Claude fixing issues...' });
       frontendHtml = await callSonnetFixer(frontendHtml, htmlIssues, title, description, websiteType, designSpec);
     }
+    send({ step: 'frontend', status: 'done' });
 
-    // Agent 3 — Claude Haiku: Express backend
+    if (!frontendHtml.includes('<!DOCTYPE') && !frontendHtml.includes('<html')) {
+      send({ step: 'error', error: 'Frontend generation failed. Please try again.' });
+      return res.end();
+    }
+
+    // Step 3 — Claude Haiku: Express backend
+    send({ step: 'backend', status: 'active', label: 'Haiku building backend...' });
     const backendJs = await generateBackendCode(description, websiteType, frontendHtml);
+    send({ step: 'backend', status: 'done' });
 
-    if (!frontendHtml.includes('<!DOCTYPE') && !frontendHtml.includes('<html'))
-      return res.status(500).json({ error: 'Frontend generation failed. Please try again.' });
+    // Assemble + send final payload
+    send({ step: 'assemble', status: 'active' });
 
     const message = iteration === 0
       ? "Done. Gemini handled the design system and hero illustration. Claude Sonnet built the animated frontend, Haiku built the backend. What would you like to improve?"
@@ -183,9 +207,11 @@ app.post('/create', async (req, res) => {
       ? ['Change the color scheme', 'Make it darker', 'Add a pricing section', 'Add testimonials', 'More animations', 'Change the fonts']
       : ['Adjust the hero section', 'Change button styles', 'More minimal', 'Add more sections', 'Improve the footer'];
 
-    res.json({ html: frontendHtml, backendJs, message, suggestions, designSpec: designSpec || null });
+    send({ step: 'complete', html: frontendHtml, backendJs, message, suggestions, designSpec: designSpec || null });
+    res.end();
   } catch (err) {
-    res.status(500).json({ error: err?.message || 'Unknown error' });
+    send({ step: 'error', error: err?.message || 'Unknown error' });
+    res.end();
   }
 });
 

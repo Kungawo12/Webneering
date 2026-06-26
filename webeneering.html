@@ -655,7 +655,7 @@ document.getElementById('chatInput').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendImprovement(); }
 });
 
-// ── Generate ─────────────────────────────────────────────────────────────────
+// ── Generate (SSE streaming) ──────────────────────────────────────────────────
 async function generate(extra) {
   if (state.generating) return;
   const title       = document.getElementById('title').value.trim();
@@ -673,14 +673,7 @@ async function generate(extra) {
   document.getElementById('btnGenerate').disabled = true;
   document.getElementById('btnSend').disabled = true;
 
-  // Advance loading steps on a timer so users see real progress (~60-90s total)
   setStep('design', 'active');
-  const progressTimers = [
-    setTimeout(() => { setStep('design',   'done'); setStep('frontend', 'active'); }, 13000),
-    setTimeout(() => { setStep('frontend', 'done'); setStep('backend',  'active'); }, 40000),
-    setTimeout(() => { setStep('backend',  'done'); setStep('assemble', 'active'); }, 65000),
-  ];
-  const clearProgress = () => progressTimers.forEach(clearTimeout);
 
   try {
     const res = await fetch('/create', {
@@ -697,31 +690,54 @@ async function generate(extra) {
       }),
     });
 
-    clearProgress();
-
     if (!res.ok) {
-      const err = await res.json();
+      const err = await res.json().catch(() => ({ error: `Server error ${res.status}` }));
       throw new Error(err.error || 'Generation failed');
     }
 
-    const data = await res.json();
+    // Stream SSE events — each AI step fires as it completes
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
 
-    ['design','frontend','backend'].forEach(s => setStep(s, 'done'));
-    setStep('assemble', 'active');
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    state.currentHtml    = data.html;
-    state.currentBackend = data.backendJs;
-    if (data.designSpec) state.designSpec = data.designSpec;
-    state.iteration++;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
 
-    renderPreview(data.html);
-    showChat(data.message, data.suggestions);
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        let event;
+        try { event = JSON.parse(line.slice(6)); } catch { continue; }
 
-    setStep('assemble', 'done');
-    setTimeout(() => setLoadingState(false), 400);
+        if (event.step === 'design' && event.status === 'done') {
+          setStep('design', 'done');
+          setStep('frontend', 'active');
+        } else if (event.step === 'frontend' && event.status === 'done') {
+          setStep('frontend', 'done');
+          setStep('backend', 'active');
+        } else if (event.step === 'backend' && event.status === 'done') {
+          setStep('backend', 'done');
+          setStep('assemble', 'active');
+        } else if (event.step === 'complete') {
+          state.currentHtml    = event.html;
+          state.currentBackend = event.backendJs;
+          if (event.designSpec) state.designSpec = event.designSpec;
+          state.iteration++;
+          renderPreview(event.html);
+          showChat(event.message, event.suggestions);
+          setStep('assemble', 'done');
+          setTimeout(() => setLoadingState(false), 400);
+        } else if (event.step === 'error') {
+          throw new Error(event.error || 'Generation failed');
+        }
+      }
+    }
 
   } catch (err) {
-    clearProgress();
     setLoadingState(false);
     document.getElementById('chatSection').style.display = 'block';
     addChatMessage('ai', 'Something went wrong: ' + (err.message || 'Please try again.'));
@@ -789,72 +805,72 @@ function addChatMessage(role, text) {
 // Mock API data for preview — the backend isn't running in the iframe, so we
 // intercept fetch('/api/...') and return realistic sample data so everything works.
 function buildPreviewInjection(title) {
-  const t = (title || 'preview').replace(/'/g, "\\'");
-  return `<script>
-(function(){
-/* ── Mock fetch: intercept /api/* so preview works without a running backend ── */
-var _f=window.fetch;
-window.fetch=function(url,opts){
-  var u=typeof url==='string'?url.split('?')[0]:'';
-  if(!u.startsWith('/api/'))return _f.apply(this,arguments);
-  var method=(opts&&opts.method||'GET').toUpperCase();
-  if(method!=='GET'){
-    return Promise.resolve(new Response(JSON.stringify({success:true,message:'Your request was received — thank you!'}),{status:200,headers:{'Content-Type':'application/json'}}));
-  }
-  var mock={
-    '/api/menu':{items:[
-      {id:1,name:'${t} Special',description:'Our signature dish, crafted with care',price:'$24',category:'Mains',image:''},
-      {id:2,name:'Garden Starter',description:'Fresh seasonal vegetables with house dressing',price:'$12',category:'Starters',image:''},
-      {id:3,name:'Heritage Soup',description:'Slow-cooked broth with handmade noodles',price:'$10',category:'Soups',image:''},
-      {id:4,name:'Classic Main',description:'Traditional recipe with a modern twist',price:'$22',category:'Mains',image:''},
-      {id:5,name:'Sweet Finish',description:'Decadent dessert to end your meal',price:'$9',category:'Desserts',image:''},
-      {id:6,name:'House Drink',description:'Refreshing house-made specialty',price:'$7',category:'Drinks',image:''}
-    ]},
-    '/api/products':{products:[
-      {id:1,name:'Signature Item',description:'Our best-selling product',price:'$49',category:'Featured',stock:true},
-      {id:2,name:'Premium Bundle',description:'Everything you need in one package',price:'$89',category:'Bundles',stock:true},
-      {id:3,name:'New Arrival',description:'Just launched — limited availability',price:'$39',category:'New',stock:true},
-      {id:4,name:'Classic Pick',description:'A timeless favourite',price:'$34',category:'Classic',stock:true}
-    ]},
-    '/api/projects':{projects:[
-      {id:1,title:'Brand Identity',description:'Visual identity system for a growing startup',tags:['Design','Branding'],year:'2025'},
-      {id:2,title:'Web Platform',description:'Full-stack application with real-time features',tags:['React','Node.js'],year:'2025'},
-      {id:3,title:'Mobile App',description:'Cross-platform mobile experience',tags:['Flutter','Firebase'],year:'2024'},
-      {id:4,title:'Campaign',description:'Multi-channel marketing campaign',tags:['Strategy','Creative'],year:'2024'}
-    ]},
-    '/api/posts':{posts:[
-      {id:1,title:'Getting Started Guide',excerpt:'Everything you need to know to begin your journey',date:'June 2026',readTime:'5 min'},
-      {id:2,title:'Best Practices',excerpt:'What professionals do differently and why it matters',date:'May 2026',readTime:'8 min'},
-      {id:3,title:'Advanced Techniques',excerpt:'Level up with these proven strategies',date:'May 2026',readTime:'6 min'}
-    ]},
-    '/api/slots':{services:[
-      {id:1,name:'Consultation',description:'One-on-one session to discuss your needs',duration:'60 min',price:'$80'},
-      {id:2,name:'Standard Session',description:'Deep-dive work session with full support',duration:'2 hrs',price:'$150'},
-      {id:3,name:'Full Day Package',description:'Comprehensive service from start to finish',duration:'Full day',price:'$480'}
-    ]},
-    '/api/features':{features:[
-      {name:'Fast & Reliable',description:'Optimised for peak performance'},
-      {name:'Easy to Use',description:'Intuitive interface anyone can master'},
-      {name:'Secure',description:'Enterprise-grade protection built in'},
-      {name:'Scalable',description:'Grows seamlessly with your business'},
-      {name:'24/7 Support',description:'Always here when you need us'},
-      {name:'Analytics',description:'Real-time insights at a glance'}
-    ]}
-  };
-  var data=mock[u]||{data:[],message:'Preview ready'};
-  return Promise.resolve(new Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}}));
-};
-
-/* ── Link guard: #anchor → scroll in iframe; external → new tab; relative paths → blocked ── */
-document.addEventListener('click',function(e){
-  var a=e.target.closest('a');if(!a)return;
-  var h=a.getAttribute('href')||'';
-  if(!h||h==='#'||h.startsWith('#'))return;
-  e.preventDefault();
-  if(/^https?:\/\/|^\/\//.test(h))window.open(h,'_blank');
-});
-})();
-<\/script>`;
+  const t = (title || 'preview').replace(/['"\\]/g, '');
+  // Returns a <script> block that:
+  // 1. Intercepts fetch('/api/*') — backend not running in preview, mock returns real data
+  // 2. Blocks link navigation so clicking nav/CTA never leaves or reloads the iframe
+  return '<script>(function(){'
+    + 'var _f=window.fetch;'
+    + 'window.fetch=function(url,opts){'
+    +   'var u=typeof url==="string"?url.split("?")[0]:"";'
+    +   'if(!u.startsWith("/api/"))return _f.apply(this,arguments);'
+    +   'var method=(opts&&opts.method||"GET").toUpperCase();'
+    +   'if(method!=="GET"){'
+    +     'return Promise.resolve(new Response(JSON.stringify({success:true,message:"Request received — thank you!"}),{status:200,headers:{"Content-Type":"application/json"}}));'
+    +   '}'
+    // Return arrays directly — matches backend "GET: return array directly" rule
+    +   'var mock={'
+    +     '"/api/menu":['
+    +       '{id:1,name:"' + t + ' Special",description:"Our signature dish, crafted with care",price:24,category:"Mains"},'
+    +       '{id:2,name:"Garden Starter",description:"Fresh seasonal vegetables with house dressing",price:12,category:"Starters"},'
+    +       '{id:3,name:"Heritage Soup",description:"Slow-cooked broth with handmade noodles",price:10,category:"Soups"},'
+    +       '{id:4,name:"Classic Main",description:"Traditional recipe with a modern twist",price:22,category:"Mains"},'
+    +       '{id:5,name:"Sweet Finish",description:"Decadent dessert to end your meal",price:9,category:"Desserts"},'
+    +       '{id:6,name:"House Drink",description:"Refreshing house-made specialty",price:7,category:"Drinks"}'
+    +     '],'
+    +     '"/api/products":['
+    +       '{id:1,name:"Signature Item",description:"Our best-selling product",price:49,category:"Featured",stock:true},'
+    +       '{id:2,name:"Premium Bundle",description:"Everything you need in one package",price:89,category:"Bundles",stock:true},'
+    +       '{id:3,name:"New Arrival",description:"Just launched, limited availability",price:39,category:"New",stock:true},'
+    +       '{id:4,name:"Classic Pick",description:"A timeless favourite",price:34,category:"Classic",stock:true}'
+    +     '],'
+    +     '"/api/projects":['
+    +       '{id:1,title:"Brand Identity",description:"Visual identity for a growing startup",tags:["Design","Branding"],year:"2025"},'
+    +       '{id:2,title:"Web Platform",description:"Full-stack app with real-time features",tags:["React","Node.js"],year:"2025"},'
+    +       '{id:3,title:"Mobile App",description:"Cross-platform mobile experience",tags:["Flutter","Firebase"],year:"2024"},'
+    +       '{id:4,title:"Campaign",description:"Multi-channel marketing campaign",tags:["Strategy","Creative"],year:"2024"}'
+    +     '],'
+    +     '"/api/posts":['
+    +       '{id:1,title:"Getting Started",excerpt:"Everything you need to know to begin",date:"June 2026",readTime:"5 min"},'
+    +       '{id:2,title:"Best Practices",excerpt:"What professionals do differently",date:"May 2026",readTime:"8 min"},'
+    +       '{id:3,title:"Advanced Techniques",excerpt:"Level up with proven strategies",date:"May 2026",readTime:"6 min"}'
+    +     '],'
+    +     '"/api/slots":['
+    +       '{id:1,name:"Consultation",description:"One-on-one session",duration:"60 min",price:80},'
+    +       '{id:2,name:"Standard Session",description:"Deep-dive work session",duration:"2 hrs",price:150},'
+    +       '{id:3,name:"Full Day Package",description:"Complete service from start to finish",duration:"Full day",price:480}'
+    +     '],'
+    +     '"/api/features":['
+    +       '{name:"Fast and Reliable",description:"Optimised for peak performance"},'
+    +       '{name:"Easy to Use",description:"Intuitive interface anyone can master"},'
+    +       '{name:"Secure",description:"Enterprise-grade protection built in"},'
+    +       '{name:"Scalable",description:"Grows seamlessly with your business"},'
+    +       '{name:"Support",description:"Always here when you need us"},'
+    +       '{name:"Analytics",description:"Real-time insights at a glance"}'
+    +     ']'
+    +   '};'
+    +   'var data=mock[u]||[];'
+    +   'return Promise.resolve(new Response(JSON.stringify(data),{status:200,headers:{"Content-Type":"application/json"}}));'
+    + '};'
+    // Link guard — prevents nav/CTA links navigating away from the preview
+    + 'document.addEventListener("click",function(e){'
+    +   'var a=e.target.closest("a");if(!a)return;'
+    +   'var h=a.getAttribute("href")||"";'
+    +   'if(!h||h==="#"||h.startsWith("#"))return;'
+    +   'e.preventDefault();'
+    +   'if(/^https?:\\/\\/|^\\/\\//.test(h))window.open(h,"_blank");'
+    + '});'
+    + '})();<\/script>';
 }
 
 function renderPreview(html) {
@@ -864,12 +880,14 @@ function renderPreview(html) {
 
   const title = document.getElementById('title').value.trim() || 'preview';
 
-  // Strip any <base> tags — in srcdoc context they resolve URLs against the parent page
+  // Strip any <base> tags — in srcdoc context they resolve relative URLs against the parent page
   let safe = html.replace(/<base\b[^>]*>/gi, '');
 
-  // Inject mock fetch + link guard right after <head> opens so it's live before any other script
+  // Use function replacement — avoids $N interpretation ($24, $49, etc. in injection would corrupt the string)
   const injection = buildPreviewInjection(title);
-  safe = safe.replace(/<head([^>]*)>/i, '<head$1>' + injection);
+  safe = safe.replace(/<head([^>]*)>/i, function(_, attrs) {
+    return '<head' + attrs + '>' + injection;
+  });
 
   frame.srcdoc = safe;
   document.getElementById('previewLabel').textContent = title.toLowerCase();
