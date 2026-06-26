@@ -158,7 +158,7 @@ app.post('/create', async (req, res) => {
       effectiveImprovements = [compressed];
     }
 
-    // Agent 2 — Claude Haiku: HTML structure (Gemini's design + animation embedded)
+    // Agent 2 — Claude Sonnet: HTML structure (Gemini's design + animation embedded)
     let frontendHtml = await callClaudeFrontend(title, description, websiteType, features, effectiveImprovements, designSpec, heroSvg, animationJs);
 
     // Agent 2b — Claude Sonnet (QA): validate output; fix silently if issues found
@@ -431,17 +431,17 @@ Output raw JS only. No markdown.`;
   return clean(result.response.text().trim());
 }
 
-// ── Claude Haiku Frontend Agent ───────────────────────────────────────────────
+// ── Claude Sonnet Frontend Agent ─────────────────────────────────────────────
 async function callClaudeFrontend(title, description, websiteType, features, improvements, designSpec, heroSvg, animationJs) {
   const rawPrompt = buildClaudeFrontendPrompt(title, description, websiteType, features, improvements, designSpec, heroSvg, animationJs);
   const { text: prompt } = await headroomCompress(rawPrompt, 'prompt→Claude-frontend');
 
   const msg = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: 'claude-sonnet-4-6',
     max_tokens: 8000,
     messages: [{ role: 'user', content: prompt }],
   });
-  console.log('✅ Claude Haiku frontend coded');
+  console.log('✅ Claude Sonnet frontend coded');
   return clean(msg.content[0]?.text || '');
 }
 
@@ -783,7 +783,19 @@ function buildClaudeFrontendPrompt(title, description, websiteType, features, im
     ? `\nGEMINI ANIMATION JS — embed this EXACTLY just before </body> in a <script> tag:\n${animationJs}\n`
     : '';
 
-  return `You are a senior frontend engineer. Build the HTML structure for a ${websiteType} website. Gemini has already created the design system, hero illustration, and animation code — your job is to write clean, semantic HTML that correctly uses them.
+  const imgKeyword = encodeURIComponent(`${websiteType} ${title.split(' ').slice(0,2).join(' ')}`);
+  const imageGuide = {
+    restaurant: `Use <img src="https://picsum.photos/seed/${encodeURIComponent(title)}-dish/600/400" class="w-full h-48 object-cover rounded-xl"> for dish cards. Use different seeds per card (dish1, dish2, dish3…).`,
+    portfolio:  `Use <img src="https://picsum.photos/seed/${encodeURIComponent(title)}-proj/600/400" class="w-full h-48 object-cover rounded-xl"> for project thumbnails. Use different seeds per card.`,
+    store:      `Use <img src="https://picsum.photos/seed/${encodeURIComponent(title)}-prod/400/400" class="w-full aspect-square object-cover rounded-xl"> for product images. Use different seeds per product.`,
+    blog:       `Use <img src="https://picsum.photos/seed/${encodeURIComponent(title)}-post/600/360" class="w-full h-48 object-cover rounded-xl"> for post cover images.`,
+    booking:    `Use <img src="https://picsum.photos/seed/${encodeURIComponent(title)}-svc/600/400" class="w-full h-48 object-cover rounded-xl"> for service photos.`,
+    business:   `Use <img src="https://picsum.photos/seed/${encodeURIComponent(title)}-team/200/200" class="w-16 h-16 rounded-full object-cover"> for team/testimonial avatars.`,
+    event:      `Use <img src="https://picsum.photos/seed/${encodeURIComponent(title)}-spkr/200/200" class="w-24 h-24 rounded-full object-cover mx-auto"> for speaker headshots.`,
+    saas:       `Use <img src="https://picsum.photos/seed/${encodeURIComponent(title)}-user/200/200" class="w-12 h-12 rounded-full object-cover"> for testimonial avatars.`,
+  }[websiteType] || `Use <img src="https://picsum.photos/seed/${imgKeyword}/600/400" class="w-full h-48 object-cover rounded-xl"> for content images.`;
+
+  return `You are a senior frontend engineer building a premium, visually stunning ${websiteType} website. Gemini has already created the design system, hero SVG illustration, and GSAP animation code — your job is to write the full HTML, embedding them correctly.
 
 PROJECT: ${title}
 BRIEF: ${description}
@@ -810,34 +822,54 @@ ${sectionMap}
 <style>
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 :root{--brand:${p};--sec:${sec};--bg:${bg};--surf:${surf};--text:${textCol};--radius:${br}}
+html{scroll-behavior:smooth}
+body{font-family:'${bodyFnt}',sans-serif;background:${bg};color:${textCol}}
 nav.nav-scrolled{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,0,0,.08);box-shadow:0 1px 12px rgba(0,0,0,.06)}
+.hero-title,.hero-sub,.hero-cta,.hero-visual{opacity:0}
+[data-animate]{opacity:0;transform:translateY(40px)}
 </style>
 
-═══ HTML RULES ═══
-• Tailwind utility classes for all layout/spacing/color — no custom CSS except :root vars above
-• MUST use these class names for Gemini's animation to work:
-  - .hero-title on the main headline
-  - .hero-sub on the subtitle/description
-  - .hero-cta on the primary CTA button
-  - .hero-visual on the div wrapping the hero SVG
-  - data-animate on every card, section heading, and feature item (Gemini animates these on scroll)
-  - data-delay="0.1" (increment by 0.1 per item in a row for stagger)
-  - .stat-number on any animated counter numbers
-• Nav: logo left, links right; hamburger for mobile (toggle hidden class); uses <nav> tag
-• Hero: two columns — left: .hero-title, .hero-sub, .hero-cta; right: .hero-visual with the Gemini SVG
-• Heading size: text-5xl md:text-7xl font-black tracking-tighter
-• CTA: px-8 py-4 rounded-full font-bold text-white inline-block hover:opacity-90 transition-all
-• Cards: bg-white/bg-surface rounded-2xl border shadow-sm hover:shadow-xl transition-all
-• Forms: e.preventDefault() → disable btn → fetch() POST → show ✅ success or ❌ error inline
-• GET data grids: DOMContentLoaded → fetch → render; show skeleton pulse div first
-• Footer: dark or brand bg, link columns, copyright
-• Compact markup — no HTML comments
-• Embed Gemini animation JS exactly as given, just before </body>
+═══ IMAGES ═══
+${imageGuide}
+Every card, product, post, speaker, team member, or service MUST include a real <img> tag using the picsum.photos pattern above. Vary the seed per image so each looks different. No icon-only placeholder divs.
+
+═══ ANIMATION CLASS RULES (critical — Gemini's JS depends on these) ═══
+• .hero-title — the main headline element (h1)
+• .hero-sub — the subtitle/tagline paragraph
+• .hero-cta — the primary call-to-action button or button wrapper
+• .hero-visual — the div wrapping the hero SVG illustration
+• data-animate — every card, feature item, testimonial, and section heading; these get scroll-reveal
+• data-delay="0.1" — increment by 0.1 per sibling item for stagger (e.g. 0.1, 0.2, 0.3)
+• .stat-number — any number/counter element for animated counting
+• data-y="60" — optional: taller rise for large section headings
+
+═══ VISUAL QUALITY RULES ═══
+• Heading size: text-5xl md:text-7xl font-black tracking-tighter leading-none
+• Section headings: text-3xl md:text-5xl font-bold tracking-tight mb-4
+• CTA button: px-8 py-4 rounded-full font-bold text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 inline-block; background gradient from brand to sec
+• Cards: rounded-2xl overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-white
+• Section padding: py-20 md:py-28 px-6
+• Grid: grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8
+• Hero section minimum height: min-h-screen flex items-center; use gradient or dark bg
+• Add a subtle gradient overlay on hero: absolute inset-0 bg-gradient-to-br from-brand/90 to-sec/80
+• Badges/tags on cards: inline-block text-xs font-semibold px-3 py-1 rounded-full bg-brand/10 text-brand mb-3
+• Footer: dark bg (bg-gray-900 or bg-black), white text, 4-column grid with links
+
+═══ HTML STRUCTURE RULES ═══
+• Tailwind utility classes for everything — no custom CSS beyond the :root vars and hero/animate init above
+• Nav: logo left (font-bold text-xl), links right (hidden md:flex gap-8), hamburger mobile (toggle class hidden)
+• Hero: two-column grid lg:grid-cols-2 gap-12 items-center — left column has title+sub+cta, right has .hero-visual
+• Embed the Gemini SVG exactly as provided inside .hero-visual — do not modify it
+• Forms: e.preventDefault() → disable submit btn → fetch() POST → show ✅ success or ❌ error message inline
+• GET data grids: DOMContentLoaded → fetch → render items; show animated skeleton pulse divs while loading
+• Compact markup — no HTML comments inside the body
 
 ═══ API ═══
 ${apiRoutes}
 
-Output ONLY raw HTML from <!DOCTYPE html> to </html>. No markdown. No code fences.`;
+Embed Gemini animation JS exactly as given, in a <script> tag just before </body>.
+
+Output ONLY raw HTML from <!DOCTYPE html> to </html>. No markdown. No code fences. No explanation.`;
 }
 
 function buildConversationalPrompt(description, websiteType, improvements, designSpec) {
