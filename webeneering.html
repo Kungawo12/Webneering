@@ -790,7 +790,12 @@ function renderPreview(html) {
   const frame = document.getElementById('previewFrame');
   document.getElementById('emptyState').style.display = 'none';
   frame.style.display = 'block';
-  frame.srcdoc = html;
+
+  // Force all links in generated site to open in new tab — prevents iframe navigation to /
+  const safe = html.includes('<base ')
+    ? html
+    : html.replace(/<head([^>]*)>/i, '<head$1><base target="_blank">');
+  frame.srcdoc = safe;
 
   const title = document.getElementById('title').value.trim() || 'preview';
   document.getElementById('previewLabel').textContent = title.toLowerCase();
@@ -889,10 +894,9 @@ if (localStorage.getItem('wbn-seen-v3')) {
   document.getElementById('introOverlay').classList.add('hidden');
 }
 
-// If this page loads inside an iframe (e.g. from a generated site navigating to /),
-// hide the overlay immediately so it doesn't look like the app restarted.
+// If this page loads inside an iframe, show a redirect prompt instead of the full app.
 if (window.self !== window.top) {
-  document.getElementById('introOverlay').classList.add('hidden');
+  document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#040404;font-family:Inter,sans-serif;flex-direction:column;gap:16px"><p style="color:rgba(255,255,255,.5);font-size:13px;margin:0">Open Webeneering in its own tab</p><a href="/" target="_blank" style="color:#fff;font-size:14px;font-weight:600;text-decoration:none;padding:10px 24px;border:1px solid rgba(255,255,255,.2);border-radius:8px">Open &rarr;</a></div>';
 }
 
 // ── Example prefill ───────────────────────────────────────────────────────────
