@@ -560,7 +560,14 @@ async function generate(extra) {
   document.getElementById('btnGenerate').disabled = true;
   document.getElementById('btnSend').disabled = true;
 
+  // Advance loading steps on a timer so users see real progress (~60-90s total)
   setStep('design', 'active');
+  const progressTimers = [
+    setTimeout(() => { setStep('design',   'done'); setStep('frontend', 'active'); }, 13000),
+    setTimeout(() => { setStep('frontend', 'done'); setStep('backend',  'active'); }, 40000),
+    setTimeout(() => { setStep('backend',  'done'); setStep('assemble', 'active'); }, 65000),
+  ];
+  const clearProgress = () => progressTimers.forEach(clearTimeout);
 
   try {
     const res = await fetch('/create', {
@@ -577,20 +584,16 @@ async function generate(extra) {
       }),
     });
 
-    setStep('design', 'done');
-    setStep('frontend', 'active');
+    clearProgress();
 
     if (!res.ok) {
       const err = await res.json();
       throw new Error(err.error || 'Generation failed');
     }
 
-    setStep('frontend', 'done');
-    setStep('backend', 'active');
-
     const data = await res.json();
 
-    setStep('backend', 'done');
+    ['design','frontend','backend'].forEach(s => setStep(s, 'done'));
     setStep('assemble', 'active');
 
     state.currentHtml    = data.html;
@@ -605,6 +608,7 @@ async function generate(extra) {
     setTimeout(() => setLoadingState(false), 400);
 
   } catch (err) {
+    clearProgress();
     setLoadingState(false);
     addChatMessage('ai', '⚠ ' + (err.message || 'Something went wrong. Please try again.'));
   } finally {
