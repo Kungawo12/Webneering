@@ -5,7 +5,8 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const archiver = require('archiver');
 const path = require('path');
 const fs = require('fs');
-const { compress: hrCompress } = require('headroom-ai');
+const { compress: hrCompress }        = require('headroom-ai');
+const { withHeadroom: withHeadroomGemini } = require('headroom-ai/gemini');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -296,9 +297,10 @@ async function callGeminiFrontend(title, description, websiteType, features, imp
 
   for (const modelName of MODELS) {
     try {
-      const model = gemini.getGenerativeModel({ model: modelName, generationConfig: { maxOutputTokens: 8192 } });
+      const baseModel = gemini.getGenerativeModel({ model: modelName, generationConfig: { maxOutputTokens: 8192 } });
+      const model = HEADROOM_ENABLED ? withHeadroomGemini(baseModel) : baseModel;
       result = await model.generateContent(prompt);
-      console.log(`✅ Gemini frontend generated (${modelName})`);
+      console.log(`✅ Gemini frontend generated (${modelName})${HEADROOM_ENABLED ? ' [Headroom]' : ''}`);
       break;
     } catch (e) {
       lastErr = e;
