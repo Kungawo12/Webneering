@@ -140,36 +140,39 @@ app.post('/create', async (req, res) => {
   if (!title || !description) return res.status(400).json({ error: 'title and description are required.' });
 
   try {
-    // Reuse the cached design spec on improvement iterations to save a Gemini call
+    // Agent 1 — Gemini: design system (colors, fonts, mood, animation style)
     const designSpec = (iteration > 0 && cachedDesignSpec)
       ? cachedDesignSpec
       : await callGeminiDesigner(websiteType, description, features);
 
-    // Compress accumulated improvements once they grow past 2 entries
+    // Agent 1b — Gemini: hero SVG illustration
+    const heroSvg = await callGeminiSvgAsset(title, description, websiteType, designSpec);
+
+    // Compress accumulated improvements
     let effectiveImprovements = improvements;
     if (improvements.length > 2) {
-      const { text: compressed } = await headroomCompress(
-        improvements.join('\n---\n'), 'improvements→Gemini'
-      );
+      const { text: compressed } = await headroomCompress(improvements.join('\n---\n'), 'improvements');
       effectiveImprovements = [compressed];
     }
 
-    // Generate frontend first so Claude can see which API routes it calls
-    const frontendHtml = await callGeminiFrontend(title, description, websiteType, features, effectiveImprovements, designSpec);
+    // Agent 2 — Claude Sonnet: full frontend with Lenis + GSAP animations
+    const frontendHtml = await callClaudeFrontend(title, description, websiteType, features, effectiveImprovements, designSpec, heroSvg);
+
+    // Agent 3 — Claude Haiku: Express backend
     const backendJs = await generateBackendCode(description, websiteType, frontendHtml);
 
     if (!frontendHtml.includes('<!DOCTYPE') && !frontendHtml.includes('<html'))
       return res.status(500).json({ error: 'Frontend generation failed. Please try again.' });
 
     const message = iteration === 0
-      ? "Webeneering is done. Gemini designed the frontend and Claude built the backend. What would you like to improve?"
+      ? "Done. Gemini handled the design system and hero illustration. Claude Sonnet built the animated frontend, Haiku built the backend. What would you like to improve?"
       : iteration === 1
         ? "Updated. What else would you like to change?"
         : "Here's the refined version. Ready to download?";
 
     const suggestions = iteration === 0
-      ? ['Change the color scheme', 'Make it darker', 'Add a pricing section', 'Add testimonials', 'Simplify the layout', 'Change the fonts']
-      : ['Adjust the hero section', 'Change button styles', 'Make it more minimal', 'Add more sections', 'Change the footer'];
+      ? ['Change the color scheme', 'Make it darker', 'Add a pricing section', 'Add testimonials', 'More animations', 'Change the fonts']
+      : ['Adjust the hero section', 'Change button styles', 'More minimal', 'Add more sections', 'Improve the footer'];
 
     res.json({ html: frontendHtml, backendJs, message, suggestions, designSpec: designSpec || null });
   } catch (err) {
@@ -310,6 +313,66 @@ async function callGeminiFrontend(title, description, websiteType, features, imp
   return clean(result.response.text().trim());
 }
 
+// ── Gemini SVG Illustration Agent ────────────────────────────────────────────
+async function callGeminiSvgAsset(title, description, websiteType, designSpec) {
+  if (!process.env.GEMINI_API_KEY) return '';
+  const primary   = designSpec?.palette?.primary   || '#7c3aed';
+  const secondary = designSpec?.palette?.secondary || '#ec4899';
+  const mood      = designSpec?.mood               || 'professional and modern';
+
+  const prompt = `Create a hero SVG illustration for: "${title}" — ${description}
+Business type: ${websiteType}. Visual mood: ${mood}
+Brand colors: primary=${primary}, secondary=${secondary}
+
+Choose the most fitting illustration style:
+- Fashion/luxury → abstract geometric shapes, elegant draping lines, fabric textures
+- SaaS/tech → floating UI cards, dashboard widgets, abstract data visualization
+- Restaurant/food → food items, plates, steam effects, ingredient elements
+- Portfolio/design → creative tools, frames, color swatches, brush strokes
+- Store/e-commerce → product cards, shopping bags, price tags
+- Fitness/health → organic curves, motion lines, nature/body shapes
+- Agency/creative → video frames, social cards, media elements
+- Event → stage lights, crowd shapes, speaker podium
+
+REQUIREMENTS:
+• viewBox="0 0 500 400" width="500" height="400"
+• Use <defs> with <linearGradient> using primary=${primary} and secondary=${secondary}
+• Rich multi-element composition with depth — background, midground, foreground layers
+• Subtle drop shadows (<filter>) for depth
+• No text inside the SVG
+• Output ONLY the raw <svg...></svg>. No markdown, no explanation.`;
+
+  const MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+  let result, lastErr;
+  for (const modelName of MODELS) {
+    try {
+      result = await gemini.getGenerativeModel({ model: modelName }).generateContent(prompt);
+      console.log(`✅ Gemini SVG illustration generated (${modelName})`);
+      break;
+    } catch (e) {
+      lastErr = e;
+      console.warn(`⚠️  Gemini SVG ${modelName} failed: ${e.message?.slice(0, 80)}`);
+    }
+  }
+  if (!result) return '';
+  const text = clean(result.response.text().trim());
+  return text.includes('<svg') ? text : '';
+}
+
+// ── Claude Sonnet Frontend Agent ──────────────────────────────────────────────
+async function callClaudeFrontend(title, description, websiteType, features, improvements, designSpec, heroSvg) {
+  const rawPrompt = buildClaudeFrontendPrompt(title, description, websiteType, features, improvements, designSpec, heroSvg);
+  const { text: prompt } = await headroomCompress(rawPrompt, 'prompt→Claude-frontend');
+
+  const msg = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 8000,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  console.log('✅ Claude Sonnet frontend generated');
+  return clean(msg.content[0]?.text || '');
+}
+
 // ── Headroom compression helper ──────────────────────────────────────────────
 // Compresses a plain-text string before it reaches a model.
 // Returns { text: string, tokensSaved: number }.
@@ -445,23 +508,25 @@ app.listen(process.env.PORT || 3000, () => console.log('Running on http://localh
 
 // ── Prompts ───────────────────────────────────────────────────────────────────
 function buildGeminiDesignPrompt(title, description, extras) {
-  return `You are a senior UI/UX designer. Analyze this brief and return a design JSON.
+  return `You are a senior UI/UX designer. Analyze this project brief and return a design specification as JSON.
 
 PROJECT: ${title}
 DESCRIPTION: ${description}
 EXTRAS: ${extras}
 
-Return ONLY this JSON (no markdown):
+Return ONLY this JSON (no markdown, no explanation):
 {
   "theme": "light or dark",
   "palette": { "primary": "#hex", "secondary": "#hex", "accent": "#hex", "background": "#hex", "surface": "#hex", "text": "#hex" },
-  "gradients": { "hero": "CSS gradient", "button": "CSS gradient", "card": "CSS gradient" },
-  "typography": { "heading": "Google Font name", "body": "Google Font or system-ui", "headingWeight": "700 or 800", "style": "modern|elegant|playful|bold|minimal" },
-  "mood": "2-sentence visual mood",
-  "heroStyle": "hero section description",
+  "gradients": { "hero": "CSS gradient string", "button": "CSS gradient string", "card": "CSS gradient string" },
+  "typography": { "heading": "Google Font name (e.g. Playfair Display, Space Grotesk, Syne, Fraunces)", "body": "Google Font or system-ui", "headingWeight": "700 or 800", "style": "modern|elegant|playful|bold|minimal|editorial" },
+  "mood": "2-sentence visual mood description",
+  "heroStyle": "hero layout description (e.g. split two-column with visual right, full-width cinematic, card-based with floating elements)",
+  "animationStyle": "animation personality (e.g. smooth fade-up with stagger, dramatic reveals with parallax, playful bouncy, minimal subtle fades)",
   "borderRadius": "4px|8px|16px|24px",
   "spacing": "compact|comfortable|spacious"
-}`;
+}`
+;
 }
 
 function buildGeminiFrontendPrompt(title, description, websiteType, features, improvements, designSpec) {
@@ -535,6 +600,133 @@ CODING RULES (must follow):
 • NO comments, NO blank lines between tags, keep HTML tight
 
 Output ONLY the raw HTML from <!DOCTYPE html> to </html>. No markdown. No code fences. No explanation.`;
+}
+
+function buildClaudeFrontendPrompt(title, description, websiteType, features, improvements, designSpec, heroSvg) {
+  const p       = designSpec?.palette?.primary    || '#7c3aed';
+  const sec     = designSpec?.palette?.secondary  || '#db2777';
+  const accent  = designSpec?.palette?.accent     || p;
+  const bg      = designSpec?.palette?.background || '#ffffff';
+  const surf    = designSpec?.palette?.surface    || '#f8f8f8';
+  const textCol = designSpec?.palette?.text       || '#111111';
+  const font    = designSpec?.typography?.heading || 'Inter';
+  const bodyFnt = designSpec?.typography?.body    || 'Inter';
+  const mood    = designSpec?.mood                || 'professional and modern';
+  const theme   = designSpec?.theme               || 'light';
+  const br      = designSpec?.borderRadius        || '8px';
+  const animStyle = designSpec?.animationStyle    || 'smooth fade-up with stagger';
+  const heroStyle = designSpec?.heroStyle         || 'split two-column with visual right';
+
+  const improvementText = improvements.length
+    ? `\nAPPLY ALL USER IMPROVEMENTS:\n${improvements.map(i => `• ${i}`).join('\n')}`
+    : '';
+
+  const apiRoutes = {
+    restaurant: 'fetch /api/menu → menu grid; POST /api/reserve {name,email,date,time,guests}',
+    portfolio:  'fetch /api/projects → projects grid; POST /api/contact {name,email,message}',
+    store:      'fetch /api/products → product grid with prices; POST /api/order {name,email,items}',
+    blog:       'fetch /api/posts → posts grid; POST /api/subscribe {email}',
+    booking:    'fetch /api/slots → services list; POST /api/book {name,email,date,time,service}',
+    business:   'POST /api/contact {name,email,message}',
+    event:      'POST /api/rsvp {name,email}; JS countdown timer',
+    saas:       'fetch /api/features → features list; POST /api/waitlist {email}',
+  }[websiteType] || 'POST /api/contact {name,email,message}';
+
+  const sectionMap = {
+    restaurant: 'Nav, Hero(two-col: headline+CTA left, SVG right), MenuGrid, ReservationForm, Footer',
+    portfolio:  'Nav, Hero(two-col: headline+CTA left, SVG right), ProjectsGrid, Skills, ContactForm, Footer',
+    store:      'Nav, Hero(two-col: headline+CTA left, SVG right), ProductsGrid, Footer',
+    blog:       'Nav, Hero(two-col: headline+CTA left, SVG right), PostsGrid, SubscribeForm, Footer',
+    booking:    'Nav, Hero(two-col: headline+CTA left, SVG right), ServicesGrid, BookingForm, Footer',
+    business:   'Nav, Hero(two-col: headline+CTA left, SVG right), Services(6 cards), Testimonials(3), ContactForm, Footer',
+    event:      'Nav, Hero(full-width+Countdown, SVG overlaid), Speakers, RSVPForm, Footer',
+    saas:       'Nav, Hero(two-col: headline+CTA left, SVG right), Features(6 icons), Pricing(3 tiers), WaitlistForm, Footer',
+  }[websiteType] || 'Nav, Hero(two-col), Features, ContactForm, Footer';
+
+  const heroBlock = heroSvg
+    ? `\nGEMINI HERO SVG — embed this EXACTLY as-is inside the hero right column:\n${heroSvg}\n`
+    : '';
+
+  return `You are an expert frontend engineer. Build a production-quality ${websiteType} website with premium scroll animations.
+
+PROJECT: ${title}
+BRIEF: ${description}
+FEATURES: ${features || 'standard for this site type'}${improvementText}
+
+═══ GEMINI DESIGN SYSTEM ═══
+Theme: ${theme} | Mood: ${mood}
+Primary: ${p} | Secondary: ${sec} | Accent: ${accent}
+Background: ${bg} | Surface: ${surf} | Text: ${textCol}
+Heading font: ${font} | Body font: ${bodyFnt} | Border radius: ${br}
+Hero layout: ${heroStyle}
+Animation personality: ${animStyle}
+${heroBlock}
+═══ SECTIONS (in order) ═══
+${sectionMap}
+
+═══ REQUIRED HEAD (copy exactly) ═══
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=${font.replace(/ /g,'+')}:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{brand:'${p}',sec:'${sec}',accent:'${accent}'}}}}</script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.42/bundled/lenis.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+:root{--brand:${p};--sec:${sec};--bg:${bg};--surf:${surf};--text:${textCol};--radius:${br}}
+</style>
+
+═══ ANIMATION SYSTEM (add just before </body>) ═══
+<script>
+gsap.registerPlugin(ScrollTrigger);
+const lenis = new Lenis();
+lenis.on('scroll', ScrollTrigger.update);
+gsap.ticker.add(time => lenis.raf(time * 1000));
+gsap.ticker.lagSmoothing(0);
+
+// Hero entrance (runs immediately on load)
+gsap.timeline()
+  .fromTo('.hero-title',  {opacity:0,y:40},{opacity:1,y:0,duration:.9,ease:'power3.out'})
+  .fromTo('.hero-sub',    {opacity:0,y:24},{opacity:1,y:0,duration:.7,ease:'power2.out'},'-=.5')
+  .fromTo('.hero-cta',    {opacity:0,y:16},{opacity:1,y:0,duration:.5,ease:'power2.out'},'-=.4')
+  .fromTo('.hero-visual', {opacity:0,scale:.92},{opacity:1,scale:1,duration:1,ease:'power2.out'},'-=.6');
+
+// Scroll reveals — add data-animate to any element
+gsap.utils.toArray('[data-animate]').forEach(el => {
+  gsap.fromTo(el,
+    {opacity:0, y:Number(el.dataset.y||40)},
+    {opacity:1, y:0, duration:.7, ease:'power2.out',
+     delay: Number(el.dataset.delay||0),
+     scrollTrigger:{trigger:el, start:'top 88%', toggleActions:'play none none none'}
+    }
+  );
+});
+
+// Nav scroll behaviour
+const nav = document.querySelector('nav');
+ScrollTrigger.create({
+  start:'top -60',
+  onUpdate:({isActive})=>nav.classList.toggle('nav-scrolled',isActive)
+});
+</script>
+
+═══ CODING RULES ═══
+• Tailwind for layout/spacing; <style> block only for custom vars and keyframe animations
+• Nav: logo left, links right, hamburger mobile; add class "nav-scrolled" style: backdrop-blur + border + shadow on scroll
+• Hero: two columns (left: text, right: hero SVG if provided); heading uses .hero-title, subtitle .hero-sub, CTA .hero-cta, SVG wrapper .hero-visual
+• Heading: text-5xl md:text-7xl font-black tracking-tighter leading-none (Space Grotesk / ${font})
+• CTA button: px-8 py-4 rounded-full font-bold text-white, background brand color, hover:opacity-90 hover:-translate-y-0.5 transition-all
+• Cards: bg-surface rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all; add data-animate data-delay="0.1" etc.
+• Section headings: add data-animate to animate in on scroll
+• Skeleton loaders: animated pulse while fetch is in progress (before data arrives)
+• Forms: e.preventDefault() → disable btn → fetch() POST → show ✅ success or ❌ error inline (never alert())
+• GET data: DOMContentLoaded → fetch → render list/grid; show "Loading…" skeleton first
+• Footer: dark bg or brand bg; organized link columns; copyright line
+• Stat counters (if present): GSAP counter animation triggered by ScrollTrigger
+• NO HTML comments; compact markup
+
+Output ONLY raw HTML from <!DOCTYPE html> to </html>. No markdown. No code fences. No explanation.`;
 }
 
 function buildConversationalPrompt(description, websiteType, improvements, designSpec) {
