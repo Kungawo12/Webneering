@@ -882,10 +882,10 @@ function flashField(id) {
 function startBuilding() {
   const overlay = document.getElementById('introOverlay');
   overlay.classList.add('hidden');
-  localStorage.setItem('wbn-seen', '1');
+  localStorage.setItem('wbn-seen-v3', '1');
 }
 
-if (localStorage.getItem('wbn-seen')) {
+if (localStorage.getItem('wbn-seen-v3')) {
   document.getElementById('introOverlay').classList.add('hidden');
 }
 
