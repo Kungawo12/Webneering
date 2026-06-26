@@ -292,11 +292,12 @@ app.post('/generate-graphic', async (req, res) => {
 
 // ── Gemini UI/UX Design Agent ─────────────────────────────────────────────────
 async function callGeminiDesigner(title, description, extras) {
-  if (!process.env.GEMINI_API_KEY) return null;
-  try {
+  const prompt = buildGeminiDesignPrompt(title, description, extras);
+
+  // Try Gemini first (best UI/UX instinct)
+  if (process.env.GEMINI_API_KEY) {
     const GEMINI_MODELS = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash'];
     let result, lastErr;
-    const prompt = buildGeminiDesignPrompt(title, description, extras);
     for (const modelName of GEMINI_MODELS) {
       try {
         result = await gemini.getGenerativeModel({ model: modelName }).generateContent(prompt);
@@ -306,16 +307,37 @@ async function callGeminiDesigner(title, description, extras) {
         if (!e.message?.includes('429') && !e.message?.includes('quota') && !e.message?.includes('503')) throw e;
       }
     }
-    if (!result) throw lastErr;
-    const text = result.response.text().trim();
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
-    console.log('✅ Gemini design spec generated');
-    return JSON.parse(jsonMatch[0]);
-  } catch (err) {
-    console.warn('⚠️  Gemini fallback:', err.message?.split('\n')[0]);
-    return null;
+    if (result) {
+      try {
+        const text = result.response.text().trim();
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          console.log('✅ Gemini design spec generated');
+          return JSON.parse(jsonMatch[0]);
+        }
+      } catch (_) {}
+    }
+    // All Gemini quota exhausted — fall through to Claude
+    console.warn('⚠️  Gemini quota exhausted — using Claude Haiku for design spec');
   }
+
+  // Claude Haiku fallback — used when Gemini is unavailable or over quota
+  try {
+    const msg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    const text = (msg.content[0]?.text || '').trim();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      console.log('✅ Claude Haiku design spec generated (Gemini fallback)');
+      return JSON.parse(jsonMatch[0]);
+    }
+  } catch (err) {
+    console.warn('⚠️  Design spec fallback also failed:', err.message?.split('\n')[0]);
+  }
+  return null;
 }
 
 // ── Gemini Frontend Agent ─────────────────────────────────────────────────────
@@ -1135,9 +1157,7 @@ function clean(text) {
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`\n✅  Server running at http://localhost:${PORT}`);
-    console.log(`   🚀  Webeneering      : http://localhost:${PORT}/webeneering.html`);
-    console.log(`   🏗️  Builder (legacy) : http://localhost:${PORT}/builder.html`);
-    console.log(`   ⚡  Generator (legacy): http://localhost:${PORT}/generator.html`);
+    console.log(`   🚀  Webeneering: http://localhost:${PORT}/webeneering.html`);
     console.log(`   Gemini (UI/UX):  ${process.env.GEMINI_API_KEY ? '✅ active' : '⚠️  not configured'}`);
     console.log(`   Claude (Backend): Haiku 4.5\n`);
   });
