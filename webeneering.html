@@ -263,13 +263,7 @@ iframe{width:100%;height:100%;border:none;background:#fff}
   display:flex;flex-direction:column;align-items:center;
   padding:28px 24px;overflow-y:auto;
 }
-.empty-header{text-align:center;margin-bottom:20px}
-.empty-title{
-  font-family:'Space Grotesk',system-ui,sans-serif;
-  font-weight:700;font-size:22px;letter-spacing:-.02em;color:var(--fg);
-  margin-bottom:8px;
-}
-.empty-sub{font-size:13px;color:var(--fg3);line-height:1.6;max-width:380px;margin:0 auto}
+.empty-agents{display:flex;gap:10px;margin-top:0;justify-content:center}
 .empty-agents{display:flex;gap:10px;margin-top:12px;justify-content:center}
 .agent-badge{
   padding:5px 12px;border-radius:var(--r-full);border:1px solid var(--border);
@@ -278,51 +272,62 @@ iframe{width:100%;height:100%;border:none;background:#fff}
 .agent-badge.g{color:#60a5fa;border-color:rgba(96,165,250,.25);background:rgba(96,165,250,.06)}
 .agent-badge.c{color:#a78bfa;border-color:rgba(167,139,250,.25);background:rgba(167,139,250,.06)}
 
-/* ── GALLERY ── */
-.gallery-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg4);margin-bottom:10px;align-self:flex-start}
-.example-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}
-.example-card{cursor:pointer;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);background:var(--surface);transition:border-color .15s,transform .15s}
-.example-card:hover{border-color:var(--border2);transform:translateY(-2px)}
-
-/* Mini preview anatomy */
-.ex-preview{width:100%;aspect-ratio:16/9;display:flex;flex-direction:column;overflow:hidden;background:var(--eb,#0A0A0A)}
-.ex-nav{height:18%;background:linear-gradient(90deg,var(--ep),var(--es));display:flex;align-items:center;padding:0 6px;gap:5px;flex-shrink:0}
-.ex-logo-bar{width:22px;height:4px;border-radius:3px;background:rgba(255,255,255,.8)}
-.ex-nav-links{display:flex;gap:3px;margin-left:auto}
-.ex-nav-links span{width:14px;height:3px;border-radius:2px;background:rgba(255,255,255,.5)}
-.ex-hero{flex:0 0 30%;background:linear-gradient(135deg,var(--ep),var(--es));opacity:.75}
-.ex-row{display:flex;gap:3px;padding:5px;flex:1}
-.ex-card-sm{flex:1;border-radius:3px;background:rgba(255,255,255,.07)}
-.ex-features{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:4px 5px;flex:1}
-.ex-feat{border-radius:3px;background:rgba(255,255,255,.07);min-height:10px}
-.ex-projects{display:flex;gap:4px;padding:5px;flex:1}
-.ex-proj{flex:1;border-radius:3px;background:rgba(255,255,255,.07)}
-.ex-pricing-row{display:flex;gap:3px;padding:0 5px 4px}
-.ex-price-card{flex:1;height:16px;border-radius:3px;background:rgba(255,255,255,.07)}
-.ex-price-card.highlight{background:linear-gradient(135deg,var(--ep),var(--es));opacity:.85}
-.ex-form-hint{margin:0 5px 5px;height:10px;border-radius:3px;background:rgba(255,255,255,.07)}
-.ex-meta{display:flex;align-items:center;gap:7px;padding:7px 9px}
-.ex-type-badge{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 6px;border-radius:var(--r-full);border:1px solid var(--border2);color:var(--fg3)}
-.ex-name{font-size:11px;font-weight:600;color:var(--fg2)}
-
-/* Per-card color themes */
-.ex-theme-coffee{--ep:#7C4A1E;--es:#D4834A;--eb:#1A0E05}
-.ex-theme-saas  {--ep:#6366F1;--es:#8B5CF6;--eb:#0D0B1E}
-.ex-theme-port  {--ep:#111111;--es:#444444;--eb:#FAFAFA}
-.ex-theme-store {--ep:#2D6A4F;--es:#74C69D;--eb:#F0FAF4}
-.ex-theme-book  {--ep:#B5838D;--es:#E5989B;--eb:#FFF0F3}
-.ex-theme-event {--ep:#0F172A;--es:#38BDF8;--eb:#020817}
-
-/* Light-background card overrides */
-.ex-preview.ex-light{background:var(--eb)}
-.ex-preview.ex-light .ex-card-sm,
-.ex-preview.ex-light .ex-proj,
-.ex-preview.ex-light .ex-form-hint{background:rgba(0,0,0,.07)}
-.ex-preview.ex-light .ex-feat{background:rgba(0,0,0,.06)}
-
-/* Event card specifics */
-.ex-theme-event .ex-hero{background:linear-gradient(135deg,#0F172A,#1E3A5F);opacity:1}
-.ex-theme-event .ex-feat{background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.18)}
+/* ── HERO CANVAS ── */
+.empty-state{justify-content:center;gap:24px}
+.hero-canvas{position:relative;display:flex;align-items:center;justify-content:center;width:100%;padding:20px 0 4px}
+.hero-glow{
+  position:absolute;width:360px;height:220px;
+  background:radial-gradient(ellipse at center,rgba(99,102,241,.28) 0%,rgba(167,139,250,.12) 50%,transparent 72%);
+  filter:blur(36px);pointer-events:none;
+  animation:glow-pulse 4s ease-in-out infinite;
+}
+@keyframes glow-pulse{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+.hero-browser{
+  width:min(360px,88%);
+  background:#111;
+  border:1px solid rgba(255,255,255,.11);
+  border-radius:10px;overflow:hidden;
+  transform:perspective(900px) rotateX(7deg);
+  box-shadow:0 30px 80px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.04);
+  animation:browser-float 5s ease-in-out infinite;
+  position:relative;z-index:1;
+}
+@keyframes browser-float{
+  0%,100%{transform:perspective(900px) rotateX(7deg) translateY(0)}
+  50%    {transform:perspective(900px) rotateX(7deg) translateY(-7px)}
+}
+.hb-chrome{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 12px;background:#1a1a1a;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.hb-dots{display:flex;gap:5px}
+.hb-dots span{width:8px;height:8px;border-radius:50%}
+.hb-dots span:nth-child(1){background:#FF5F57}
+.hb-dots span:nth-child(2){background:#FEBC2E}
+.hb-dots span:nth-child(3){background:#28C840}
+.hb-addr{flex:1;height:14px;background:rgba(255,255,255,.06);border-radius:3px}
+.hb-body{padding:10px;display:flex;flex-direction:column;gap:7px;background:#0d0d0d}
+.hb-el{opacity:0;animation:hb-in .5s ease forwards;animation-delay:var(--d,0s)}
+@keyframes hb-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.hb-topbar{height:22px;background:linear-gradient(90deg,#6366f1,#8b5cf6);border-radius:4px}
+.hb-hero-block{
+  height:56px;border-radius:6px;
+  background:linear-gradient(135deg,rgba(99,102,241,.28),rgba(139,92,246,.18));
+  border:1px solid rgba(99,102,241,.2);
+}
+.hb-row{display:flex;gap:6px}
+.hb-card{flex:1;height:30px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);border-radius:4px}
+.hb-lines{display:flex;flex-direction:column;gap:5px;padding:2px 0}
+.hb-line{height:6px;background:rgba(255,255,255,.06);border-radius:3px}
+.hb-line:nth-child(1){width:72%}.hb-line:nth-child(2){width:52%}.hb-line:nth-child(3){width:63%}
+.hb-d1{animation-delay:.15s}.hb-d2{animation-delay:.35s}.hb-d3{animation-delay:.55s}.hb-d4{animation-delay:.75s}
+.hero-text{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.hero-title{
+  font-family:'Space Grotesk',system-ui,sans-serif;
+  font-weight:700;font-size:18px;letter-spacing:-.02em;color:var(--fg);
+}
+.hero-sub{font-size:12px;color:var(--fg3)}
 </style>
 </head>
 <body>
@@ -445,77 +450,37 @@ iframe{width:100%;height:100%;border:none;background:#fff}
     </div>
 
     <div class="preview-frame">
-      <!-- Empty state with example gallery -->
+      <!-- Empty state — animated hero -->
       <div class="empty-state" id="emptyState">
-        <div class="empty-header">
-          <div class="empty-title">What will you build?</div>
-          <div class="empty-sub">Describe your idea on the left. Gemini designs the frontend, Claude engineers the backend — you get a full deployable project.</div>
+
+        <div class="hero-canvas">
+          <div class="hero-glow"></div>
+          <div class="hero-browser">
+            <div class="hb-chrome">
+              <div class="hb-dots"><span></span><span></span><span></span></div>
+              <div class="hb-addr"></div>
+            </div>
+            <div class="hb-body">
+              <div class="hb-el hb-d1 hb-topbar"></div>
+              <div class="hb-el hb-d2 hb-hero-block"></div>
+              <div class="hb-el hb-d3 hb-row">
+                <div class="hb-card"></div><div class="hb-card"></div><div class="hb-card"></div>
+              </div>
+              <div class="hb-el hb-d4 hb-lines">
+                <div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-text">
+          <div class="hero-title">Describe a website. Watch it build.</div>
           <div class="empty-agents">
             <span class="agent-badge g">Gemini · UI/UX + Frontend</span>
             <span class="agent-badge c">Haiku · Backend</span>
           </div>
         </div>
-        <div class="gallery-label">Click an example to start</div>
-        <div class="example-grid">
 
-          <div class="example-card" onclick="useExample('coffee','Coffee Shop','A cozy specialty coffee shop in Austin, TX. Serving single-origin espresso, pour-overs, and seasonal pastries in a warm, minimal space.','restaurant')">
-            <div class="ex-preview ex-theme-coffee">
-              <div class="ex-nav"><div class="ex-logo-bar"></div><div class="ex-nav-links"><span></span><span></span><span></span></div></div>
-              <div class="ex-hero"></div>
-              <div class="ex-row"><div class="ex-card-sm"></div><div class="ex-card-sm"></div><div class="ex-card-sm"></div></div>
-              <div class="ex-form-hint"></div>
-            </div>
-            <div class="ex-meta"><span class="ex-type-badge">Restaurant</span><span class="ex-name">Coffee Shop</span></div>
-          </div>
-
-          <div class="example-card" onclick="useExample('saas','LaunchPad Analytics','A SaaS dashboard for indie hackers. Real-time revenue tracking, churn analytics, MRR graphs, and customer cohort analysis.','saas')">
-            <div class="ex-preview ex-theme-saas">
-              <div class="ex-nav"><div class="ex-logo-bar"></div><div class="ex-nav-links"><span></span><span></span><span></span></div></div>
-              <div class="ex-hero"></div>
-              <div class="ex-features"><div class="ex-feat"></div><div class="ex-feat"></div><div class="ex-feat"></div><div class="ex-feat"></div><div class="ex-feat"></div><div class="ex-feat"></div></div>
-              <div class="ex-pricing-row"><div class="ex-price-card"></div><div class="ex-price-card highlight"></div><div class="ex-price-card"></div></div>
-            </div>
-            <div class="ex-meta"><span class="ex-type-badge">SaaS</span><span class="ex-name">Analytics Platform</span></div>
-          </div>
-
-          <div class="example-card" onclick="useExample('portfolio','Alex Kim Design','A minimal portfolio for a UI/UX designer and illustrator. Showcasing brand identity projects, mobile app designs, and editorial work.','portfolio')">
-            <div class="ex-preview ex-theme-port ex-light">
-              <div class="ex-nav"><div class="ex-logo-bar"></div><div class="ex-nav-links"><span></span><span></span><span></span></div></div>
-              <div class="ex-hero"></div>
-              <div class="ex-projects"><div class="ex-proj"></div><div class="ex-proj"></div><div class="ex-proj"></div></div>
-            </div>
-            <div class="ex-meta"><span class="ex-type-badge">Portfolio</span><span class="ex-name">Design Portfolio</span></div>
-          </div>
-
-          <div class="example-card" onclick="useExample('store','Bloom & Co.','An online plant and flower boutique. Seasonal arrangements, rare houseplants, custom gift boxes and next-day local delivery.','store')">
-            <div class="ex-preview ex-theme-store ex-light">
-              <div class="ex-nav"><div class="ex-logo-bar"></div><div class="ex-nav-links"><span></span><span></span><span></span></div></div>
-              <div class="ex-hero"></div>
-              <div class="ex-row"><div class="ex-card-sm"></div><div class="ex-card-sm"></div><div class="ex-card-sm"></div></div>
-            </div>
-            <div class="ex-meta"><span class="ex-type-badge">Store</span><span class="ex-name">Plant Boutique</span></div>
-          </div>
-
-          <div class="example-card" onclick="useExample('booking','Meridian Wellness','A premium wellness studio offering massage therapy, yoga, and acupuncture in Manhattan. Online booking with real-time slot availability.','booking')">
-            <div class="ex-preview ex-theme-book ex-light">
-              <div class="ex-nav"><div class="ex-logo-bar"></div><div class="ex-nav-links"><span></span><span></span><span></span></div></div>
-              <div class="ex-hero"></div>
-              <div class="ex-row"><div class="ex-card-sm"></div><div class="ex-card-sm"></div><div class="ex-card-sm"></div></div>
-              <div class="ex-form-hint"></div>
-            </div>
-            <div class="ex-meta"><span class="ex-type-badge">Booking</span><span class="ex-name">Wellness Studio</span></div>
-          </div>
-
-          <div class="example-card" onclick="useExample('event','BuilderConf 2026','A developer conference for AI-native builders. 3 days, 40 speakers, workshops on agents, RAG, and production LLM systems. San Francisco, Oct 2026.','event')">
-            <div class="ex-preview ex-theme-event">
-              <div class="ex-nav"><div class="ex-logo-bar"></div><div class="ex-nav-links"><span></span><span></span><span></span></div></div>
-              <div class="ex-hero"></div>
-              <div class="ex-features"><div class="ex-feat"></div><div class="ex-feat"></div><div class="ex-feat"></div><div class="ex-feat"></div></div>
-            </div>
-            <div class="ex-meta"><span class="ex-type-badge">Event</span><span class="ex-name">Tech Conference</span></div>
-          </div>
-
-        </div>
       </div>
 
       <!-- Loading overlay -->
@@ -535,7 +500,7 @@ iframe{width:100%;height:100%;border:none;background:#fff}
             <div class="step-icon" id="icon-backend">
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </div>
-            <span>Sonnet · Engineering backend</span>
+            <span>Haiku · Engineering backend</span>
           </div>
           <div class="loading-step" id="step-assemble">
             <div class="step-icon" id="icon-assemble">
@@ -807,14 +772,7 @@ if (localStorage.getItem('wbn-seen')) {
 }
 
 // ── Example prefill ───────────────────────────────────────────────────────────
-function useExample(id, title, description, type) {
-  document.getElementById('title').value = title;
-  document.getElementById('description').value = description;
-  document.querySelectorAll('.type-chip').forEach(c => {
-    c.classList.toggle('active', c.dataset.type === type);
-  });
-  state.websiteType = type;
-}
+
 </script>
 
 </body>
